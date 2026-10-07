@@ -53,6 +53,25 @@ keyPassword=你的密码
 
 > 升级安装必须使用同一个签名，否则无法覆盖安装。
 
+### 自动发布 Release
+
+仓库已配置 GitHub Actions（`.github/workflows/release.yml`）：推送 `v*` 标签，或在 Actions 页手动运行 **Release**，即自动构建并发布 APK。
+
+```bash
+git tag v1.1.2 && git push origin v1.1.2
+```
+
+需在仓库 **Settings → Secrets and variables → Actions** 添加：
+
+| Secret | 内容 |
+| --- | --- |
+| `KEYSTORE_BASE64` | 签名文件 base64（`base64 -w0 release.keystore`） |
+| `KEYSTORE_PASSWORD` | 签名库密码 |
+| `KEY_ALIAS` | 密钥别名 |
+| `KEY_PASSWORD` | 密钥密码 |
+
+未设置时使用 debug 签名，无法覆盖安装正式版。
+
 ## 项目结构
 
 ```
