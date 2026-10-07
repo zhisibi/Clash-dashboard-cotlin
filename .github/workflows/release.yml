@@ -50,8 +50,9 @@ jobs:
         run: |
           chmod +x gradlew
           if [ -n "$KEYSTORE_FILE" ]; then
-            keytool -list -keystore "$KEYSTORE_FILE" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" >/dev/null 2>ks.log \
-              || { echo "::error::签名校验失败：$(head -c 300 ks.log | tr '\n' ' ')"; exit 1; }
+            echo "::notice::keystore $(wc -c < "$KEYSTORE_FILE") bytes sha=$(sha256sum "$KEYSTORE_FILE" | cut -c1-12) aliasLen=${#KEY_ALIAS} pwLen=${#KEYSTORE_PASSWORD} keyPwLen=${#KEY_PASSWORD}"
+            keytool -list -keystore "$KEYSTORE_FILE" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > ks.log 2>&1 \
+              || { echo "::error::签名校验失败：$(grep -v '^$' ks.log | head -c 300 | tr '\n' ' ')"; exit 1; }
           fi
           if ! ./gradlew assembleRelease --no-daemon --stacktrace > build.log 2>&1; then
             grep -E "^e: |error:|FAILURE|What went wrong|Caused by|> " build.log | head -40 | while IFS= read -r l; do echo "::error::$l"; done
