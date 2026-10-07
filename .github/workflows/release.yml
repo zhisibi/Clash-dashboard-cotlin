@@ -49,7 +49,15 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon
+          if [ -n "$KEYSTORE_FILE" ]; then
+            keytool -list -keystore "$KEYSTORE_FILE" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" >/dev/null 2>ks.log \
+              || { echo "::error::签名校验失败：$(head -c 300 ks.log | tr '\n' ' ')"; exit 1; }
+          fi
+          if ! ./gradlew assembleRelease --no-daemon --stacktrace > build.log 2>&1; then
+            grep -E "^e: |error:|FAILURE|What went wrong|Caused by|> " build.log | head -40 | while IFS= read -r l; do echo "::error::$l"; done
+            tail -60 build.log
+            exit 1
+          fi
           VERSION=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts)
           mkdir -p dist
           cp app/build/outputs/apk/release/app-release.apk "dist/ClashPanel-Kotlin-$VERSION.apk"
