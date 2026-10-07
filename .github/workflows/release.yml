@@ -49,6 +49,9 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           chmod +x gradlew
+          # 去掉 Secrets 里可能误带的空格/换行
+          trim() { printf '%s' "$1" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'; }
+          export KEYSTORE_PASSWORD="$(trim "$KEYSTORE_PASSWORD")" KEY_ALIAS="$(trim "$KEY_ALIAS")" KEY_PASSWORD="$(trim "$KEY_PASSWORD")"
           if [ -n "$KEYSTORE_FILE" ]; then
             echo "::notice::keystore $(wc -c < "$KEYSTORE_FILE") bytes sha=$(sha256sum "$KEYSTORE_FILE" | cut -c1-12) aliasLen=${#KEY_ALIAS} pwLen=${#KEYSTORE_PASSWORD} keyPwLen=${#KEY_PASSWORD}"
             keytool -list -keystore "$KEYSTORE_FILE" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > ks.log 2>&1 \
