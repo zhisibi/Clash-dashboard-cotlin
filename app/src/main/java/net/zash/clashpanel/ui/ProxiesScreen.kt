@@ -17,98 +17,113 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import net.zash.clashpanel.MainViewModel
+import net.zash.clashpanel.i18n.t
+import androidx.compose.ui.unit.Dp
 import net.zash.clashpanel.data.Proxy
 import net.zash.clashpanel.data.ProxyProvider
 
-@OptIn(ExperimentalMaterial3Api::class)
+private fun queryMatcher(query: String): (String) -> Boolean {
+    val regex = runCatching { Regex(query, RegexOption.IGNORE_CASE) }.getOrNull()
+    return { s -> query.isBlank() || (regex?.containsMatchIn(s) ?: s.contains(query, true)) }
+}
+
 @Composable
-fun ProxiesScreen(vm: MainViewModel, contentPadding: PaddingValues) {
-    var query by rememberSaveable { mutableStateOf("") }
-    var tab by rememberSaveable { mutableIntStateOf(0) }
-    var openGroup by remember { mutableStateOf<String?>(null) }
+fun ProxiesHeader(vm: MainViewModel) {
+    val ui = vm.ui
     var menu by remember { mutableStateOf(false) }
-    val ex = LocalExtra.current
-
-    val regex = remember(query) { runCatching { Regex(query, RegexOption.IGNORE_CASE) }.getOrNull() }
-    fun match(s: String) = query.isBlank() || (regex?.containsMatchIn(s) ?: s.contains(query, true))
-
-    Column(Modifier.fillMaxSize().background(ex.bg)) {
-        Column(Modifier.background(ex.card).padding(horizontal = 12.dp, vertical = 8.dp)) {
-            if (vm.providers.isNotEmpty()) {
-                SegTabs(listOf("代理组 ${vm.groups.size}", "代理提供商 ${vm.providers.size}"), tab, { tab = it })
-                Spacer(Modifier.height(8.dp))
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                SearchBox(query, { query = it }, if (tab == 0) "搜索代理组 | Regex" else "搜索提供商 | Regex", Modifier.weight(1f), Icons.Outlined.ViewAgenda)
-                Spacer(Modifier.width(8.dp))
-                Box {
-                    RoundIconButton(Icons.Outlined.Tune) { menu = true }
-                    ProxyOptionsMenu(vm, menu) { menu = false }
-                }
-                Spacer(Modifier.width(8.dp))
-                if (tab == 0) RoundIconButton(Icons.Outlined.Bolt) { vm.testAllGroups() }
-                else RoundIconButton(Icons.Outlined.Sync) { vm.updateAllProviders() }
-            }
+    Column {
+        if (vm.providers.isNotEmpty()) {
+            SegTabs(listOf(t("seg_groups", vm.groups.size), t("seg_providers", vm.providers.size)), ui.proxyTab, { ui.proxyTab = it }, dense = true)
+            Spacer(Modifier.height(6.dp))
         }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-        if (tab == 0) {
-            val groups = vm.groups.filter { g -> match(g.name) || g.all.any { match(it) } }
-                .let { l -> if (vm.showGlobal) l else l.filter { it.name != "GLOBAL" } }
-            if (groups.isEmpty()) {
-                Box(Modifier.padding(16.dp)) { EmptyCard(if (vm.proxiesLoading) "加载中…" else "暂无数据") }
-            } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(vm.proxyCols.coerceIn(1, 3)),
-                    contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 14.dp, bottom = contentPadding.calculateBottomPadding() + 14.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    items(groups, key = { it.name }) { g -> GroupCard(vm, g) { openGroup = g.name } }
-                }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SearchBox(ui.proxyQuery, { ui.proxyQuery = it }, if (ui.proxyTab == 0) t("search_groups") else t("search_providers"), Modifier.weight(1f), dense = true)
+            Spacer(Modifier.width(6.dp))
+            Box {
+                RoundIconButton(Icons.Outlined.Tune, dense = true) { menu = true }
+                ProxyOptionsMenu(vm, menu) { menu = false }
             }
-        } else {
-            val list = vm.providers.filter { p -> match(p.name) || p.proxies.any { match(it.name) } }
-            ProvidersList(vm, list, contentPadding)
+            Spacer(Modifier.width(6.dp))
+            if (ui.proxyTab == 0 || vm.providers.isEmpty()) RoundIconButton(Icons.Outlined.Bolt, dense = true) { vm.testAllGroups() }
+            else RoundIconButton(Icons.Outlined.Sync, dense = true) { vm.updateAllProviders() }
         }
     }
+}
 
-    val gName = openGroup
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProxiesBody(vm: MainViewModel, top: Dp, bottom: Dp) {
+    val ui = vm.ui
+    val query = ui.proxyQuery
+    val match = remember(query) { queryMatcher(query) }
+    val tab = if (vm.providers.isEmpty()) 0 else ui.proxyTab
+    val pad = PaddingValues(start = 14.dp, end = 14.dp, top = top, bottom = bottom + 14.dp)
+
+    if (tab == 0) {
+        val groups = vm.groups.filter { g -> match(g.name) || g.all.any { match(it) } }
+            .let { l -> if (vm.showGlobal) l else l.filter { it.name != "GLOBAL" } }
+        if (groups.isEmpty()) {
+            ScrollableEmpty(top, bottom + 14.dp, if (vm.proxiesLoading) t("loading") else t("no_data"))
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(vm.proxyCols.coerceIn(1, 3)),
+                contentPadding = pad,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                items(groups, key = { it.name }) { g -> GroupCard(vm, g) { ui.openGroup = g.name } }
+            }
+        }
+    } else {
+        val list = vm.providers.filter { p -> match(p.name) || p.proxies.any { match(it.name) } }
+        if (list.isEmpty()) ScrollableEmpty(top, bottom + 14.dp, t("no_data")) else ProvidersList(vm, list, pad)
+    }
+
+    val gName = ui.openGroup
     if (gName != null) {
         val g = vm.proxies[gName]
-        if (g == null) openGroup = null else {
+        if (g == null) ui.openGroup = null else {
             val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-            ModalBottomSheet(onDismissRequest = { openGroup = null }, sheetState = sheet, containerColor = MaterialTheme.colorScheme.background) {
-                GroupDetail(vm, g, query)
+            ModalBottomSheet(onDismissRequest = { ui.openGroup = null }, sheetState = sheet, containerColor = sheetColor()) {
+                NoBackdrop { GroupDetail(vm, g, query) }
             }
         }
     }
 }
 
+/** Sheet background: palette sheet color, kept readable when glass makes it translucent. */
+@Composable
+fun sheetColor(): androidx.compose.ui.graphics.Color {
+    val p = LocalPal.current
+    return if (p.dark) androidx.compose.ui.graphics.Color(0xFF111316).copy(alpha = maxOf(p.sheet.alpha, 0.94f))
+    else androidx.compose.ui.graphics.Color(0xFFF4F4F6).copy(alpha = maxOf(p.sheet.alpha, 0.94f))
+}
+
 @Composable
 private fun ProxyOptionsMenu(vm: MainViewModel, open: Boolean, onDismiss: () -> Unit) {
     DropdownMenu(open, onDismiss) {
-        Text("节点排序", Modifier.padding(horizontal = 16.dp, vertical = 6.dp), fontSize = 12.sp, color = LocalExtra.current.subtle)
-        listOf("default" to "默认", "latency" to "按延迟", "name" to "按名称").forEach { (k, l) ->
+        Text(t("menu_node_sort"), Modifier.padding(horizontal = 16.dp, vertical = 6.dp), fontSize = 12.sp, color = LocalExtra.current.subtle)
+        listOf("default" to t("sort_default"), "latency" to t("sort_by_latency"), "name" to t("sort_by_name")).forEach { (k, l) ->
             DropdownMenuItem(
                 text = { Text(l) }, onClick = { vm.sortProxies = k; vm.savePrefs() },
                 trailingIcon = { if (vm.sortProxies == k) Icon(Icons.Outlined.Check, null) },
             )
         }
         HorizontalDivider()
-        CheckItem("隐藏不可用节点", vm.hideUnavailable) { vm.hideUnavailable = it; vm.savePrefs() }
-        CheckItem("显示 GLOBAL", vm.showGlobal) { vm.showGlobal = it; vm.savePrefs() }
-        CheckItem("显示隐藏的代理组", vm.showHiddenGroups) { vm.showHiddenGroups = it; vm.savePrefs() }
+        Text(t("menu_display"), Modifier.padding(horizontal = 16.dp, vertical = 6.dp), fontSize = 12.sp, color = LocalExtra.current.subtle)
+        CheckItem(t("hide_unavailable"), vm.hideUnavailable) { vm.hideUnavailable = it; vm.savePrefs() }
+        CheckItem(t("show_global_short"), vm.showGlobal) { vm.showGlobal = it; vm.savePrefs() }
+        CheckItem(t("show_hidden_groups"), vm.showHiddenGroups) { vm.showHiddenGroups = it; vm.savePrefs() }
         HorizontalDivider()
-        Text("每行卡片数", Modifier.padding(horizontal = 16.dp, vertical = 6.dp), fontSize = 12.sp, color = LocalExtra.current.subtle)
+        Text(t("cards_per_row"), Modifier.padding(horizontal = 16.dp, vertical = 6.dp), fontSize = 12.sp, color = LocalExtra.current.subtle)
         Row(Modifier.padding(horizontal = 12.dp)) {
             (1..3).forEach { n ->
-                FilterChip(vm.proxyCols == n, { vm.proxyCols = n; vm.savePrefs() }, { Text("$n") }, Modifier.padding(end = 6.dp))
+                FilterChip(vm.proxyCols == n, { vm.proxyCols = n; vm.savePrefs() }, { Text(t("n_cols", n)) }, Modifier.padding(end = 6.dp))
             }
         }
         HorizontalDivider()
-        DropdownMenuItem(text = { Text("刷新") }, leadingIcon = { Icon(Icons.Outlined.Refresh, null) }, onClick = { onDismiss(); vm.refreshProxies() })
+        DropdownMenuItem(text = { Text(t("act_refresh")) }, leadingIcon = { Icon(Icons.Outlined.Refresh, null) }, onClick = { onDismiss(); vm.refreshProxies() })
     }
 }
 
@@ -164,10 +179,10 @@ private fun GroupDetail(vm: MainViewModel, g: Proxy, query: String) {
             if (!g.icon.isNullOrBlank()) { ProxyIcon(g.icon, 34); Spacer(Modifier.width(10.dp)) }
             Column(Modifier.weight(1f)) {
                 Text(g.name, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("${g.type} · ${nodes.size} 个节点 · 当前 ${g.now ?: "-"}", fontSize = 12.sp, color = ex.subtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(t("group_detail_sub", g.type, nodes.size, g.now ?: "-"), fontSize = 12.sp, color = ex.subtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             if (g.fixed != null && !g.type.equals("Selector", true)) {
-                TextButton({ vm.unfix(g) }) { Text("取消固定") }
+                TextButton({ vm.unfix(g) }) { Text(t("act_unfix")) }
             }
             RoundIconButton(Icons.Outlined.Bolt, active = testing) { vm.testGroup(g) }
         }
@@ -182,7 +197,7 @@ private fun GroupDetail(vm: MainViewModel, g: Proxy, query: String) {
                 val p = vm.proxies[n]
                 val sel = g.now == n
                 val d = vm.delayOf(n, url)
-                val border = if (sel) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent
+                val border = if (sel) ex.accent else androidx.compose.ui.graphics.Color.Transparent
                 Card0(
                     Modifier.fillMaxWidth().border(2.dp, border, RoundedCornerShape(18.dp)),
                     onClick = { if (selectable) vm.select(g, n) },
@@ -211,27 +226,28 @@ private fun GroupDetail(vm: MainViewModel, g: Proxy, query: String) {
 }
 
 @Composable
-private fun ProvidersList(vm: MainViewModel, list: List<ProxyProvider>, contentPadding: PaddingValues) {
+private fun ProvidersList(vm: MainViewModel, list: List<ProxyProvider>, pad: PaddingValues) {
     val ex = LocalExtra.current
     LazyVerticalGrid(
         columns = GridCells.Fixed(1),
-        contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 14.dp, bottom = contentPadding.calculateBottomPadding() + 14.dp),
+        contentPadding = pad,
         verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxSize(),
     ) {
         items(list, key = { it.name }) { p ->
             var expanded by remember { mutableStateOf(false) }
-            Card0(Modifier.fillMaxWidth(), onClick = { expanded = !expanded }) {
+            Card0(Modifier.fillMaxWidth(), onClick = { expanded = !expanded }, kind = GlassKind.Row) {
                 Column(Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(p.name, fontSize = 18.sp, fontWeight = FontWeight.Medium)
-                            Text("${p.vehicleType} · ${p.proxies.size} 个节点 · 更新于 ${fmtAgo(net.zash.clashpanel.data.parseIsoMillis(p.updatedAt))}", fontSize = 12.sp, color = ex.subtle)
+                            Text(t("provider_sub", p.vehicleType, p.proxies.size, fmtAgo(net.zash.clashpanel.data.parseIsoMillis(p.updatedAt))), fontSize = 12.sp, color = ex.subtle)
                         }
                         IconButton({ vm.healthcheck(p.name) }) {
                             if (vm.testing["provider:${p.name}"] == true) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-                            else Icon(Icons.Outlined.Bolt, "健康检查")
+                            else Icon(Icons.Outlined.Bolt, t("act_healthcheck"))
                         }
-                        if (p.vehicleType.equals("HTTP", true)) IconButton({ vm.updateProvider(p.name) }) { Icon(Icons.Outlined.Sync, "更新") }
+                        if (p.vehicleType.equals("HTTP", true)) IconButton({ vm.updateProvider(p.name) }) { Icon(Icons.Outlined.Sync, t("act_update_sub")) }
                     }
                     if (p.subTotal > 0) {
                         val used = p.subUpload + p.subDownload
@@ -241,7 +257,7 @@ private fun ProvidersList(vm: MainViewModel, list: List<ProxyProvider>, contentP
                             modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
                         )
                         Spacer(Modifier.height(4.dp))
-                        val exp = if (p.subExpire > 0) " · 到期 " + java.text.SimpleDateFormat("yyyy-MM-dd").format(java.util.Date(p.subExpire * 1000)) else ""
+                        val exp = if (p.subExpire > 0) t("sub_expire", java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date(p.subExpire * 1000))) else ""
                         Text("${fmtBytes(used)} / ${fmtBytes(p.subTotal)}$exp", fontSize = 12.sp, color = ex.subtle)
                     }
                     if (expanded) {

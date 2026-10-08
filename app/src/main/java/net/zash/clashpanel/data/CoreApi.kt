@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit
 
 class ApiException(val code: Int, msg: String) : IOException(msg)
 
-class ClashApi(val backend: Backend) {
+class CoreApi(val backend: Backend) {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
     private val jsonType = "application/json".toMediaType()
 

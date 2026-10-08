@@ -21,120 +21,123 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import net.zash.clashpanel.MainViewModel
+import net.zash.clashpanel.i18n.t
+import androidx.compose.ui.unit.Dp
 import net.zash.clashpanel.data.Connection
 
-private val sortFields = listOf(
-    "host" to "主机", "start" to "连接时间", "download" to "下载量", "upload" to "上传量",
-    "downloadSpeed" to "下载速度", "uploadSpeed" to "上传速度", "rule" to "规则", "chains" to "代理链",
-    "process" to "进程", "source" to "来源 IP", "type" to "类型",
-)
+private val SORT_KEYS = listOf("host", "start", "download", "upload", "downloadSpeed", "uploadSpeed", "rule", "chains", "process", "source", "type")
+private val SORT_LABELS = listOf("cs_host", "cs_start", "cs_download", "cs_upload", "cs_dlspeed", "cs_ulspeed", "cs_rule", "cs_chains", "cs_process", "cs_source", "cs_type")
 
-@OptIn(ExperimentalMaterial3Api::class)
+/** Filtered + sorted connections for the current tab (shared by header count and body). */
+private fun connList(vm: MainViewModel): List<Connection> {
+    val ui = vm.ui
+    val base = when (ui.connTab) { 0 -> vm.activeConns; 1 -> vm.closedConns; else -> vm.activeConns + vm.closedConns }
+    val query = ui.connQuery
+    val regex = runCatching { Regex(query, RegexOption.IGNORE_CASE) }.getOrNull()
+    val filtered = base.filter { c ->
+        (ui.connSource.isEmpty() || c.meta.sourceIP == ui.connSource) &&
+            (query.isBlank() || run {
+                val hay = listOf(c.meta.displayHost, c.meta.destinationIP, c.meta.sourceIP, c.rule, c.rulePayload, c.chains.joinToString(" "), c.meta.process, c.meta.network, c.meta.type).joinToString(" ")
+                regex?.containsMatchIn(hay) ?: hay.contains(query, true)
+            })
+    }
+    val cmp: Comparator<Connection> = when (ui.connSort) {
+        "host" -> compareBy { it.meta.displayHost }
+        "download" -> compareBy { it.download }
+        "upload" -> compareBy { it.upload }
+        "downloadSpeed" -> compareBy { it.downloadSpeed }
+        "uploadSpeed" -> compareBy { it.uploadSpeed }
+        "rule" -> compareBy { it.rule + it.rulePayload }
+        "chains" -> compareBy { it.chains.joinToString() }
+        "process" -> compareBy { it.meta.process }
+        "source" -> compareBy { it.meta.sourceIP }
+        "type" -> compareBy { it.meta.type + it.meta.network }
+        else -> compareBy { it.startMillis }
+    }
+    return filtered.sortedWith(if (ui.connDesc) cmp.reversed() else cmp)
+}
+
 @Composable
-fun ConnectionsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
-    val ex = LocalExtra.current
-    var tab by rememberSaveable { mutableIntStateOf(0) }
-    var query by rememberSaveable { mutableStateOf("") }
-    var sort by rememberSaveable { mutableStateOf(vm.prefs.connSort) }
-    var desc by rememberSaveable { mutableStateOf(vm.prefs.connSortDesc) }
-    var sourceFilter by rememberSaveable { mutableStateOf("") }
-    var detail by remember { mutableStateOf<Connection?>(null) }
-    var confirmClose by remember { mutableStateOf(false) }
-    var compact by rememberSaveable { mutableStateOf(false) }
+private fun rememberConnList(vm: MainViewModel): List<Connection> {
+    val ui = vm.ui
+    return remember(vm.activeConns, vm.closedConns, ui.connTab, ui.connQuery, ui.connSort, ui.connDesc, ui.connSource) { connList(vm) }
+}
 
-    val base = when (tab) { 0 -> vm.activeConns; 1 -> vm.closedConns; else -> vm.activeConns + vm.closedConns }
+@Composable
+fun ConnectionsHeader(vm: MainViewModel) {
+    val ex = LocalExtra.current
+    val ui = vm.ui
+    val list = rememberConnList(vm)
     val sources = remember(vm.activeConns.size, vm.closedConns.size) {
         (vm.activeConns + vm.closedConns).map { it.meta.sourceIP }.filter { it.isNotBlank() }.distinct().sorted()
     }
-    val regex = remember(query) { runCatching { Regex(query, RegexOption.IGNORE_CASE) }.getOrNull() }
-    val list = remember(base, query, sort, desc, sourceFilter) {
-        val filtered = base.filter { c ->
-            (sourceFilter.isEmpty() || c.meta.sourceIP == sourceFilter) &&
-                (query.isBlank() || run {
-                    val hay = listOf(c.meta.displayHost, c.meta.destinationIP, c.meta.sourceIP, c.rule, c.rulePayload, c.chains.joinToString(" "), c.meta.process, c.meta.network, c.meta.type).joinToString(" ")
-                    regex?.containsMatchIn(hay) ?: hay.contains(query, true)
-                })
-        }
-        val cmp: Comparator<Connection> = when (sort) {
-            "host" -> compareBy { it.meta.displayHost }
-            "download" -> compareBy { it.download }
-            "upload" -> compareBy { it.upload }
-            "downloadSpeed" -> compareBy { it.downloadSpeed }
-            "uploadSpeed" -> compareBy { it.uploadSpeed }
-            "rule" -> compareBy { it.rule + it.rulePayload }
-            "chains" -> compareBy { it.chains.joinToString() }
-            "process" -> compareBy { it.meta.process }
-            "source" -> compareBy { it.meta.sourceIP }
-            "type" -> compareBy { it.meta.type + it.meta.network }
-            else -> compareBy { it.startMillis }
-        }
-        filtered.sortedWith(if (desc) cmp.reversed() else cmp)
-    }
-
-    Column(Modifier.fillMaxSize().background(ex.bg)) {
-        Column(Modifier.background(ex.card).padding(horizontal = 12.dp, vertical = 8.dp)) {
-            SegTabs(listOf("活跃 ${vm.activeConns.size}", "已关闭 ${vm.closedConns.size}", "全部"), tab, { tab = it })
-            Spacer(Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                DropdownChip(sortFields.first { it.first == sort }.second, sortFields, { sort = it; vm.prefs.connSort = it }, Modifier.weight(1f))
-                Spacer(Modifier.width(6.dp))
-                RoundIconButton(if (desc) Icons.Outlined.ArrowDownward else Icons.Outlined.ArrowUpward) { desc = !desc; vm.prefs.connSortDesc = desc }
-                Spacer(Modifier.width(6.dp))
-                RoundIconButton(if (compact) Icons.Outlined.ViewHeadline else Icons.Outlined.ViewAgenda) { compact = !compact }
-                Spacer(Modifier.width(6.dp))
-                RoundIconButton(if (vm.connsPaused) Icons.Outlined.PlayArrow else Icons.Outlined.Pause, active = vm.connsPaused) { vm.connsPaused = !vm.connsPaused }
-                Spacer(Modifier.width(6.dp))
-                RoundIconButton(if (tab == 1) Icons.Outlined.DeleteSweep else Icons.Outlined.Close) {
-                    if (tab == 1) vm.clearClosed() else confirmClose = true
-                }
-            }
-            Spacer(Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                DropdownChip(
-                    if (sourceFilter.isEmpty()) "全部" else sourceFilter,
-                    listOf("" to "全部") + sources.map { it to it }, { sourceFilter = it }, Modifier.width(150.dp),
-                )
-                Spacer(Modifier.width(8.dp))
-                SearchBox(query, { query = it }, "搜索 | Regex", Modifier.weight(1f), Icons.Outlined.FilterAlt)
-            }
-        }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 6.dp)) {
-            Text("↑ ${fmtBytes(vm.connTotalUp)}", fontSize = 12.sp, color = ex.up)
-            Spacer(Modifier.width(12.dp))
-            Text("↓ ${fmtBytes(vm.connTotalDown)}", fontSize = 12.sp, color = ex.down)
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // first row: segments + up/down totals (compact, on the right)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            SegTabs(listOf(t("seg_active", vm.activeConns.size), t("seg_closed", vm.closedConns.size), t("seg_all")), ui.connTab, { ui.connTab = it }, dense = true)
             Spacer(Modifier.weight(1f))
-            Text("${list.size} 条", fontSize = 12.sp, color = ex.subtle)
-        }
-        if (list.isEmpty()) {
-            Box(Modifier.padding(horizontal = 14.dp)) { EmptyCard() }
-        } else {
-            LazyColumn(
-                contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = contentPadding.calculateBottomPadding() + 14.dp),
-                verticalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 10.dp),
-            ) {
-                items(list, key = { it.id + it.closedAt }) { c -> ConnCard(vm, c, compact) { detail = c } }
+            Column(Modifier.padding(start = 6.dp), horizontalAlignment = Alignment.End) {
+                Text("↑ ${fmtBytes(vm.connTotalUp)}", fontSize = 11.sp, color = ex.up, maxLines = 1)
+                Text("↓ ${fmtBytes(vm.connTotalDown)}", fontSize = 11.sp, color = ex.down, maxLines = 1)
             }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            val si = SORT_KEYS.indexOf(ui.connSort).coerceAtLeast(0)
+            DropdownChip(t(SORT_LABELS[si]), SORT_KEYS.mapIndexed { i, k -> k to t(SORT_LABELS[i]) }, { vm.setConnSort(it, ui.connDesc) }, Modifier.weight(1f), dense = true)
+            Text(t("n_items", list.size), fontSize = 11.sp, color = ex.subtle, maxLines = 1)
+            RoundIconButton(if (ui.connDesc) Icons.Outlined.ArrowDownward else Icons.Outlined.ArrowUpward, dense = true) { vm.setConnSort(ui.connSort, !ui.connDesc) }
+            RoundIconButton(if (ui.connCompact) Icons.Outlined.ViewHeadline else Icons.Outlined.ViewAgenda, active = ui.connCompact, dense = true) { ui.connCompact = !ui.connCompact }
+            RoundIconButton(if (vm.connsPaused) Icons.Outlined.PlayArrow else Icons.Outlined.Pause, active = vm.connsPaused, dense = true) { vm.connsPaused = !vm.connsPaused }
+            RoundIconButton(if (ui.connTab == 1) Icons.Outlined.DeleteSweep else Icons.Outlined.Close, dense = true) {
+                if (ui.connTab == 1) vm.clearClosed() else ui.confirmClose = true
+            }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            DropdownChip(
+                if (ui.connSource.isEmpty()) t("all_sources") else ui.connSource,
+                listOf("" to t("all")) + sources.map { it to it }, { ui.connSource = it }, Modifier.width(128.dp), dense = true,
+            )
+            SearchBox(ui.connQuery, { ui.connQuery = it }, t("search_regex"), Modifier.weight(1f), Icons.Outlined.FilterAlt, dense = true)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ConnectionsBody(vm: MainViewModel, top: Dp, bottom: Dp) {
+    val ui = vm.ui
+    val list = rememberConnList(vm)
+    var detail by remember { mutableStateOf<Connection?>(null) }
+    if (list.isEmpty()) {
+        ScrollableEmpty(top, bottom + 14.dp, t("no_data"))
+    } else {
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = top, bottom = bottom + 14.dp),
+            verticalArrangement = Arrangement.spacedBy(if (ui.connCompact) 6.dp else 10.dp),
+        ) {
+            items(list, key = { it.id + it.closedAt }) { c -> ConnCard(vm, c, ui.connCompact) { detail = c } }
         }
     }
 
-    if (confirmClose) {
+    if (ui.confirmClose) {
+        val filtered = ui.connQuery.isNotBlank() || ui.connSource.isNotEmpty()
         AlertDialog(
-            onDismissRequest = { confirmClose = false },
-            title = { Text(if (query.isBlank() && sourceFilter.isEmpty()) "断开所有连接？" else "断开筛选出的 ${list.size} 条连接？") },
+            onDismissRequest = { ui.confirmClose = false },
+            title = { Text(if (!filtered) t("close_all_q") else t("close_filtered_q", list.size)) },
             confirmButton = {
                 TextButton({
-                    confirmClose = false
-                    if (query.isBlank() && sourceFilter.isEmpty()) vm.closeAll() else vm.closeConns(list.filter { it.closedAt == 0L }.map { it.id })
-                }) { Text("断开") }
+                    ui.confirmClose = false
+                    if (!filtered) vm.closeAll() else vm.closeConns(list.filter { it.closedAt == 0L }.map { it.id })
+                }) { Text(t("close")) }
             },
-            dismissButton = { TextButton({ confirmClose = false }) { Text("取消") } },
+            dismissButton = { TextButton({ ui.confirmClose = false }) { Text(t("cancel")) } },
         )
     }
 
     detail?.let { c ->
-        ModalBottomSheet(onDismissRequest = { detail = null }, containerColor = MaterialTheme.colorScheme.background) {
-            ConnDetail(vm, c) { detail = null }
+        ModalBottomSheet(onDismissRequest = { detail = null }, containerColor = sheetColor()) {
+            NoBackdrop { ConnDetail(vm, c) { detail = null } }
         }
     }
 }
@@ -143,7 +146,7 @@ fun ConnectionsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
 private fun ConnCard(vm: MainViewModel, c: Connection, compact: Boolean, onClick: () -> Unit) {
     val ex = LocalExtra.current
     val now = System.currentTimeMillis()
-    Card0(Modifier.fillMaxWidth(), onClick = onClick) {
+    Card0(Modifier.fillMaxWidth(), onClick = onClick, kind = GlassKind.Row) {
         Column(Modifier.padding(horizontal = 14.dp, vertical = if (compact) 8.dp else 12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -151,7 +154,7 @@ private fun ConnCard(vm: MainViewModel, c: Connection, compact: Boolean, onClick
                     fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
                 if (c.closedAt == 0L) {
-                    Icon(Icons.Outlined.Close, "断开", Modifier.size(20.dp).clickableNoRipple { vm.closeConn(c.id) }, tint = ex.subtle)
+                    Icon(Icons.Outlined.Close, t("close"), Modifier.size(20.dp).clickableNoRipple { vm.closeConn(c.id) }, tint = ex.subtle)
                 }
             }
             Spacer(Modifier.height(4.dp))
@@ -191,19 +194,19 @@ private fun ConnCard(vm: MainViewModel, c: Connection, compact: Boolean, onClick
 private fun ConnDetail(vm: MainViewModel, c: Connection, onDone: () -> Unit) {
     val ex = LocalExtra.current
     val rows = listOf(
-        "主机" to c.meta.host, "嗅探主机" to c.meta.sniffHost, "目标 IP" to c.meta.destinationIP,
-        "目标端口" to c.meta.destinationPort, "远端目标" to c.meta.remoteDestination,
-        "来源" to "${c.meta.sourceIP}:${c.meta.sourcePort}", "入站" to c.meta.inboundName, "入站用户" to c.meta.inboundUser,
-        "类型" to "${c.meta.type} / ${c.meta.network}", "DNS 模式" to c.meta.dnsMode,
-        "进程" to c.meta.process, "进程路径" to c.meta.processPath, "UID" to (c.meta.uid?.toString() ?: ""),
-        "规则" to c.rule, "规则内容" to c.rulePayload, "代理链" to c.chains.reversed().joinToString(" → "),
-        "上传" to fmtBytes(c.upload), "下载" to fmtBytes(c.download),
-        "开始时间" to fmtClock(c.startMillis), "ID" to c.id,
+        t("kv_host") to c.meta.host, t("kv_sniff") to c.meta.sniffHost, t("kv_dst_ip") to c.meta.destinationIP,
+        t("kv_dst_port") to c.meta.destinationPort, t("kv_remote") to c.meta.remoteDestination,
+        t("kv_source") to "${c.meta.sourceIP}:${c.meta.sourcePort}", t("kv_inbound") to c.meta.inboundName, t("kv_inbound_user") to c.meta.inboundUser,
+        t("kv_type") to "${c.meta.type} / ${c.meta.network}", t("kv_dns") to c.meta.dnsMode,
+        t("kv_process") to c.meta.process, t("kv_process_path") to c.meta.processPath, "UID" to (c.meta.uid?.toString() ?: ""),
+        t("kv_rule") to c.rule, t("kv_rule_payload") to c.rulePayload, t("kv_chains") to c.chains.reversed().joinToString(" → "),
+        t("kv_upload") to fmtBytes(c.upload), t("kv_download") to fmtBytes(c.download),
+        t("kv_start") to fmtClock(c.startMillis), "ID" to c.id,
     ).filter { it.second.isNotBlank() && it.second != ":" }
     Column(Modifier.fillMaxWidth().fillMaxHeight(0.85f).padding(horizontal = 16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("连接详情", fontSize = 20.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-            if (c.closedAt == 0L) Button({ vm.closeConn(c.id); onDone() }) { Text("断开") }
+            Text(t("conn_detail"), fontSize = 20.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            if (c.closedAt == 0L) Button({ vm.closeConn(c.id); onDone() }) { Text(t("close")) }
         }
         Spacer(Modifier.height(10.dp))
         Card0(Modifier.fillMaxWidth().weight(1f)) {
@@ -211,7 +214,7 @@ private fun ConnDetail(vm: MainViewModel, c: Connection, onDone: () -> Unit) {
                 Column(Modifier.verticalScroll(rememberScrollState()).padding(14.dp)) {
                     rows.forEach { (k, v) ->
                         Row(Modifier.padding(vertical = 5.dp)) {
-                            Text(k, Modifier.width(84.dp), fontSize = 13.sp, color = ex.subtle)
+                            Text(k, Modifier.width(if (net.zash.clashpanel.i18n.I18n.isEn) 104.dp else 84.dp), fontSize = 13.sp, color = ex.subtle)
                             Text(v, fontSize = 13.sp, fontFamily = if (k == "ID") FontFamily.Monospace else FontFamily.Default)
                         }
                     }

@@ -11,7 +11,7 @@ import org.junit.Assume
 import org.junit.Test
 
 class ApiTest {
-    private val api = ClashApi(Backend("t", host = "127.0.0.1", port = "19090", secret = "test123"))
+    private val api = CoreApi(Backend("t", host = "127.0.0.1", port = "19090", secret = "test123"))
 
     private fun up() = Assume.assumeTrue(runCatching { java.net.Socket("127.0.0.1", 19090).close() }.isSuccess)
 

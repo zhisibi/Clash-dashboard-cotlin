@@ -1,10 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <!-- globe ring -->
-    <path android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="4.5"
-        android:pathData="M54,32a22,22 0,1 1,0 44a22,22 0,1 1,0 -44z"/>
-    <path android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="3.5"
-        android:pathData="M32,54h44M54,32c-7,6 -10,14 -10,22s3,16 10,22M54,32c7,6 10,14 10,22s-3,16 -10,22"/>
-    <!-- bolt -->
-    <path android:fillColor="#FFFDE047" android:pathData="M70,58l-9,14h6l-3,10l10,-15h-6l3,-9z"/>
+<!-- Mimi Panel cat head (same artwork as the HarmonyOS icon, icon-src/foreground.svg), scaled into the adaptive-icon safe zone -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="1024" android:viewportHeight="1024">
+    <group android:pivotX="512" android:pivotY="512" android:scaleX="0.8" android:scaleY="0.8" android:translateY="4">
+        <path android:strokeColor="#FFFFFF" android:strokeWidth="16" android:strokeLineCap="round" android:strokeAlpha="0.9"
+            android:pathData="M300,612 L200,596 M300,650 L206,668 M724,612 L824,596 M724,650 L818,668"/>
+        <path android:fillColor="#FFFFFF" android:strokeColor="#FFFFFF" android:strokeWidth="40" android:strokeLineJoin="round"
+            android:pathData="M 262 560 C 262 470 280 410 310 372 L 300 250 L 410 318 Q 512 292 614 318 L 724 250 L 714 372 C 744 410 762 470 762 560 C 762 690 650 770 512 770 C 374 770 262 690 262 560 Z"/>
+        <path android:fillColor="#BFD2FF" android:strokeColor="#BFD2FF" android:strokeWidth="18" android:strokeLineJoin="round" android:pathData="M318,282 L326,352 L388,318 Z"/>
+        <path android:fillColor="#BFD2FF" android:strokeColor="#BFD2FF" android:strokeWidth="18" android:strokeLineJoin="round" android:pathData="M706,282 L698,352 L636,318 Z"/>
+        <path android:fillColor="#1B2550" android:pathData="M382,548 a36,48 0 1,0 72,0 a36,48 0 1,0 -72,0 z M570,548 a36,48 0 1,0 72,0 a36,48 0 1,0 -72,0 z"/>
+        <path android:fillColor="#FFFFFF" android:pathData="M418,530 a12,12 0 1,0 24,0 a12,12 0 1,0 -24,0 z M606,530 a12,12 0 1,0 24,0 a12,12 0 1,0 -24,0 z"/>
+        <path android:fillColor="#FFB3C7" android:fillAlpha="0.75" android:pathData="M336,628 a30,18 0 1,0 60,0 a30,18 0 1,0 -60,0 z M628,628 a30,18 0 1,0 60,0 a30,18 0 1,0 -60,0 z"/>
+        <path android:fillColor="#1B2550" android:strokeColor="#1B2550" android:strokeWidth="12" android:strokeLineJoin="round" android:pathData="M496,610 L528,610 L512,628 Z"/>
+        <path android:strokeColor="#1B2550" android:strokeWidth="12" android:strokeLineCap="round" android:pathData="M512,632 Q512,660 484,660 M512,632 Q512,660 540,660"/>
+    </group>
 </vector>

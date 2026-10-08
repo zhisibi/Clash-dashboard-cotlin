@@ -1,18 +1,17 @@
 package net.zash.clashpanel
 
 import android.app.Application
-import android.content.ContentValues
 import android.content.Context
 import android.os.Build
-import android.provider.MediaStore
 import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import net.zash.clashpanel.i18n.t
 
-class ClashPanelApp : Application() {
+class MimiApp : Application() {
     override fun onCreate() {
         super.onCreate()
         CrashLog.install(this)
@@ -31,18 +30,19 @@ object CrashLog {
         }
     }
 
-    private fun write(ctx: Context, t: Thread, e: Throwable) {
+    private fun write(ctx: Context, thread: Thread, e: Throwable) {
         val sw = StringWriter(); e.printStackTrace(PrintWriter(sw))
         val now = Date()
         val pi = runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0) }.getOrNull()
         val text = buildString {
-            appendLine("Clash 面板 闪退日志")
-            appendLine("时间: " + SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z", Locale.US).format(now))
-            appendLine("应用版本: ${pi?.versionName} (${if (Build.VERSION.SDK_INT >= 28) pi?.longVersionCode else @Suppress("DEPRECATION") pi?.versionCode})")
-            appendLine("设备: ${Build.MANUFACTURER} ${Build.MODEL} (${Build.DEVICE})")
-            appendLine("系统: Android ${Build.VERSION.RELEASE} / SDK ${Build.VERSION.SDK_INT}")
+            appendLine(t("crash_header"))
+            appendLine(t("crash_time") + ": " + SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z", Locale.US).format(now))
+            appendLine(t("crash_app_ver") + ": ${pi?.versionName} (${if (Build.VERSION.SDK_INT >= 28) pi?.longVersionCode else @Suppress("DEPRECATION") pi?.versionCode})")
+            appendLine(t("crash_device") + ": ${Build.MANUFACTURER} ${Build.MODEL} (${Build.DEVICE})")
+            appendLine(t("crash_os") + ": Android ${Build.VERSION.RELEASE} / SDK ${Build.VERSION.SDK_INT}")
             appendLine("ABI: ${Build.SUPPORTED_ABIS.joinToString()}")
-            appendLine("线程: ${t.name}")
+            appendLine(t("crash_kind") + ": " + t("crash_kind_jvm") + " (${e.javaClass.name})")
+            appendLine(t("crash_thread") + ": ${thread.name}")
             appendLine()
             append(sw.toString())
         }
@@ -59,27 +59,16 @@ object CrashLog {
     fun markSeen(ctx: Context) = ctx.getSharedPreferences("crash", Context.MODE_PRIVATE).edit().putBoolean("unseen", false).apply()
     fun clear(ctx: Context) { list(ctx).forEach { it.delete() }; markSeen(ctx) }
 
-    /** Save to Downloads; returns file name. */
-    fun export(ctx: Context, name: String, text: String): String {
-        if (Build.VERSION.SDK_INT >= 29) {
-            val cv = ContentValues().apply {
-                put(MediaStore.Downloads.DISPLAY_NAME, name)
-                put(MediaStore.Downloads.MIME_TYPE, "text/plain")
-                put(MediaStore.Downloads.RELATIVE_PATH, android.os.Environment.DIRECTORY_DOWNLOADS)
-            }
-            val uri = ctx.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, cv)!!
-            ctx.contentResolver.openOutputStream(uri)!!.use { it.write(text.toByteArray()) }
-            return "下载/$name"
-        }
-        val f = File(ctx.getExternalFilesDir(null), name); f.writeText(text)
-        return f.path
+    /** Writes text to a document the user picked in the system "Save as" picker (Storage Access Framework). */
+    fun writeUri(ctx: Context, uri: android.net.Uri, text: String) {
+        ctx.contentResolver.openOutputStream(uri, "wt")!!.use { it.write(text.toByteArray()) }
     }
 
     fun share(ctx: Context, text: String) {
         val i = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
             type = "text/plain"; putExtra(android.content.Intent.EXTRA_TEXT, text)
-            putExtra(android.content.Intent.EXTRA_SUBJECT, "Clash 面板 闪退日志")
+            putExtra(android.content.Intent.EXTRA_SUBJECT, t("crash_share_title"))
         }
-        ctx.startActivity(android.content.Intent.createChooser(i, "分享闪退日志").addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+        ctx.startActivity(android.content.Intent.createChooser(i, t("share_crash_chooser")).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 }

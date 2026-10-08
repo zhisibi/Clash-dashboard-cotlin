@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: '发布的标签（如 v1.1.2）'
+        description: '发布的标签（如 v1.2.0）'
         required: true
 
 permissions:
@@ -64,12 +64,27 @@ jobs:
           fi
           VERSION=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts)
           mkdir -p dist
-          cp app/build/outputs/apk/release/app-release.apk "dist/ClashPanel-Kotlin-$VERSION.apk"
+          cp app/build/outputs/apk/release/app-release.apk "dist/MimiPanel-Android-$VERSION.apk"
+          {
+            echo "## 咪咪面板 Android 版 $VERSION"
+            echo
+            awk -v v="### $VERSION" '$0==v{f=1;next} f&&/^##/{exit} f' README.md
+            echo
+            echo "## 安装说明"
+            echo
+            echo "- \`MimiPanel-Android-$VERSION.apk\`：Android 8.0+，包名 \`net.zash.clashpanel\`，与之前的版本使用同一签名，可直接覆盖升级，后端与设置会保留。"
+            echo
+            echo "SHA-256："
+            echo '```'
+            (cd dist && sha256sum *.apk)
+            echo '```'
+          } > release-notes.md
+          cat release-notes.md
 
       - name: 发布 Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG }}
-          name: Clash 面板 Kotlin ${{ env.TAG }}
-          generate_release_notes: true
+          name: 咪咪面板 Android ${{ env.TAG }}
+          body_path: release-notes.md
           files: dist/*.apk

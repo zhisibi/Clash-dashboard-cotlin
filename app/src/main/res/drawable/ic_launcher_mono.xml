@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Themed (monochrome) icon: cat head silhouette with eyes cut out -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="1024" android:viewportHeight="1024">
+    <group android:pivotX="512" android:pivotY="512" android:scaleX="0.8" android:scaleY="0.8" android:translateY="4">
+        <path android:fillColor="#FFFFFF" android:strokeColor="#FFFFFF" android:strokeWidth="40" android:strokeLineJoin="round" android:pathData="M 262 560 C 262 470 280 410 310 372 L 300 250 L 410 318 Q 512 292 614 318 L 724 250 L 714 372 C 744 410 762 470 762 560 C 762 690 650 770 512 770 C 374 770 262 690 262 560 Z"/>
+        <path android:fillColor="#000000" android:pathData="M382,548 a36,48 0 1,0 72,0 a36,48 0 1,0 -72,0 z M570,548 a36,48 0 1,0 72,0 a36,48 0 1,0 -72,0 z M496,610 L528,610 L512,628 Z"/>
+    </group>
+</vector>

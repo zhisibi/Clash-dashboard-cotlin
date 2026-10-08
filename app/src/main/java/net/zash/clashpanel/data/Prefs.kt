@@ -5,7 +5,22 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class Prefs(ctx: Context) {
+    // File name kept from earlier versions so upgrades keep their backends and settings.
     private val sp = ctx.getSharedPreferences("clash_panel", Context.MODE_PRIVATE)
+
+    fun str(k: String, d: String): String = sp.getString(k, d) ?: d
+    fun bool(k: String, d: Boolean): Boolean = sp.getBoolean(k, d)
+    fun int(k: String, d: Int): Int = sp.getInt(k, d)
+    fun float(k: String, d: Float): Float = sp.getFloat(k, d)
+    fun put(k: String, v: Any) {
+        val e = sp.edit()
+        when (v) {
+            is String -> e.putString(k, v); is Boolean -> e.putBoolean(k, v)
+            is Int -> e.putInt(k, v); is Float -> e.putFloat(k, v); is Long -> e.putLong(k, v)
+        }
+        e.apply()
+    }
+    fun remove(k: String) = sp.edit().remove(k).apply()
     private val json = Json { ignoreUnknownKeys = true }
 
     var backends: List<Backend>

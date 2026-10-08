@@ -39,84 +39,137 @@ import net.zash.clashpanel.BuildConfig
 import net.zash.clashpanel.ConnState
 import net.zash.clashpanel.MainViewModel
 import net.zash.clashpanel.data.Backend
+import net.zash.clashpanel.i18n.I18n
+import net.zash.clashpanel.i18n.LEGAL_CONTACT
+import net.zash.clashpanel.i18n.LEGAL_DEVELOPER
+import net.zash.clashpanel.i18n.t
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Dp
+import androidx.compose.material.icons.automirrored.outlined.Send
+import kotlin.math.roundToInt
 
 private data class SettingsSection(val key: String, val title: String, val desc: String, val icon: ImageVector, val keywords: String)
 
+/** title / desc / keywords are i18n keys; search matches the keywords in both languages */
 private val sections = listOf(
-    SettingsSection("backend", "后端", "当前后端、内核运维与网络监听", Icons.Outlined.Storage, "后端 内核 模式 tun 局域网 端口 重启 更新 geo dns fakeip 重载 配置 密钥"),
-    SettingsSection("panel", "面板", "主题、应用信息与交互偏好", Icons.Outlined.Home, "主题 深色 浅色 版本 关于"),
-    SettingsSection("proxy", "代理", "测速、代理组展示与图标", Icons.Outlined.Language, "测速 延迟 url 超时 排序 隐藏 卡片 global"),
-    SettingsSection("conn", "连接", "连接与日志保留数量", Icons.AutoMirrored.Outlined.CompareArrows, "连接 日志 保留 数量"),
-    SettingsSection("crash", "闪退日志", "查看、复制、分享应用崩溃记录", Icons.Outlined.BugReport, "闪退 崩溃 crash 日志 反馈 bug"),
+    SettingsSection("lang", "lang_title", "lang_desc", Icons.Outlined.Translate, "lang_keywords"),
+    SettingsSection("backend", "sec_backend", "sec_backend_desc", Icons.Outlined.Storage, "sec_backend_kw"),
+    SettingsSection("panel", "sec_panel", "sec_panel_desc", Icons.Outlined.Home, "sec_panel_kw"),
+    SettingsSection("proxy", "sec_proxy", "sec_proxy_desc", Icons.AutoMirrored.Outlined.Send, "sec_proxy_kw"),
+    SettingsSection("conn", "sec_conn", "sec_conn_desc", Icons.AutoMirrored.Outlined.CompareArrows, "sec_conn_kw"),
+    SettingsSection("crash", "sec_crash", "sec_crash_desc", Icons.Outlined.BugReport, "sec_crash_kw"),
+    SettingsSection("about", "sec_about", "sec_about_desc", Icons.Outlined.Info, "sec_about_kw"),
 )
 
 @Composable
-fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
+fun SettingsHeader(vm: MainViewModel) {
     val ex = LocalExtra.current
-    var page by rememberSaveable { mutableStateOf<String?>(null) }
-    var query by rememberSaveable { mutableStateOf("") }
-    BackHandler(page != null) { page = null }
-
-    Column(Modifier.fillMaxSize().background(ex.bg)) {
-        // header
-        Column(Modifier.background(ex.card).padding(horizontal = 12.dp, vertical = 8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(44.dp)) {
-                if (page != null) {
-                    IconButton({ page = null }) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "返回") }
-                }
-                Text(sections.firstOrNull { it.key == page }?.title ?: "设置", fontSize = 20.sp, fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(start = if (page == null) 8.dp else 0.dp))
-                Spacer(Modifier.width(10.dp))
-                Box(Modifier.width(1.dp).height(20.dp).background(MaterialTheme.colorScheme.outline))
-                Spacer(Modifier.width(10.dp))
-                val dot = when (vm.connState) { ConnState.Connected -> ex.good; ConnState.Connecting -> ex.warn; ConnState.Failed -> ex.bad; else -> ex.subtle }
-                Box(Modifier.size(9.dp).clip(CircleShape).background(dot))
-                Spacer(Modifier.width(8.dp))
-                Text(vm.active?.let { "${it.host}:${it.port}" } ?: "未连接", fontSize = 15.sp, color = ex.subtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-            if (page == null) {
-                Spacer(Modifier.height(8.dp))
-                SearchBox(query, { query = it }, "搜索设置", Modifier.fillMaxWidth())
-            }
+    val page = vm.settingsPage
+    if (page.isNotEmpty()) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.AutoMirrored.Outlined.ArrowBack, t("cancel"), Modifier.size(34.dp).clip(CircleShape).clickable { vm.settingsPage = ""; vm.expandNav() }.padding(6.dp), tint = ex.text)
+            Spacer(Modifier.width(4.dp))
+            HeaderStatus(sections.firstOrNull { it.key == page }?.let { t(it.title) } ?: t("settings"), vm.connState,
+                vm.active?.let { "${it.host}:${it.port}" } ?: t("not_connected"), modifier = Modifier.weight(1f))
         }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+    } else {
+        // settings home: title and search share one header row
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(t("settings"), fontSize = 18.sp, fontWeight = FontWeight.Medium, color = ex.text)
+            Spacer(Modifier.width(12.dp))
+            SearchBox(vm.ui.settingsQuery, { vm.ui.settingsQuery = it }, t("search_settings"), Modifier.weight(1f), dense = true)
+        }
+    }
+}
 
-        Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                .padding(start = 14.dp, end = 14.dp, bottom = contentPadding.calculateBottomPadding() + 14.dp),
-        ) {
-            when (page) {
-                null -> {
-                    Text("设置", Modifier.padding(start = 8.dp, top = 24.dp, bottom = 16.dp), fontSize = 26.sp, fontWeight = FontWeight.SemiBold)
-                    val shown = sections.filter { s -> query.isBlank() || (s.title + s.desc + s.keywords).contains(query, true) }
-                    Card0(Modifier.fillMaxWidth()) {
-                        shown.forEachIndexed { i, s ->
-                            Row(
-                                Modifier.fillMaxWidth().clickable { page = s.key }.padding(horizontal = 18.dp, vertical = 18.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Box(Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(ex.chip), contentAlignment = Alignment.Center) {
-                                    Icon(s.icon, null, Modifier.size(24.dp))
-                                }
-                                Spacer(Modifier.width(16.dp))
-                                Column(Modifier.weight(1f)) {
-                                    Text(s.title, fontSize = 18.sp)
-                                    Spacer(Modifier.height(4.dp))
-                                    Text(s.desc, fontSize = 14.sp, color = ex.subtle)
-                                }
-                                Icon(Icons.Outlined.ChevronRight, null, tint = ex.subtle)
+@Composable
+fun SettingsBody(vm: MainViewModel, top: Dp, bottom: Dp) {
+    val ex = LocalExtra.current
+    val page = vm.settingsPage
+    val scroll = rememberScrollState()
+    LaunchedEffect(page) { scroll.scrollTo(0) }
+    Column(
+        Modifier.fillMaxSize().verticalScroll(scroll).imePadding()
+            .padding(start = 14.dp, end = 14.dp, top = if (page.isEmpty()) top else top - 14.dp, bottom = bottom + 14.dp),
+    ) {
+        when (page) {
+            "" -> {
+                val q = vm.ui.settingsQuery.trim().lowercase()
+                val shown = sections.filter { s -> q.isEmpty() || (I18n.both(s.title) + " " + I18n.both(s.desc) + " " + I18n.both(s.keywords)).lowercase().contains(q) }
+                Card0(Modifier.fillMaxWidth()) {
+                    shown.forEachIndexed { i, s ->
+                        Row(
+                            Modifier.fillMaxWidth().clickable { vm.settingsPage = s.key; vm.expandNav() }.padding(18.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Box(Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(ex.chip), contentAlignment = Alignment.Center) {
+                                Icon(s.icon, null, Modifier.size(24.dp), tint = ex.text)
                             }
-                            if (i < shown.size - 1) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            Spacer(Modifier.width(16.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(t(s.title), fontSize = 18.sp, color = ex.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Spacer(Modifier.height(4.dp))
+                                Text(if (s.key == "lang") I18n.optionLabel(I18n.pref) else t(s.desc), fontSize = 14.sp, color = ex.subtle)
+                            }
+                            if (s.key == "crash" && vm.crashPrompt) {
+                                Box(Modifier.padding(end = 8.dp).size(8.dp).clip(CircleShape).background(ex.bad))
+                            }
+                            Icon(Icons.Outlined.ChevronRight, null, tint = ex.subtle)
                         }
+                        if (i < shown.size - 1) HorizontalDivider(color = ex.outlineVariant)
                     }
                 }
-                "backend" -> BackendPage(vm)
-                "panel" -> PanelPage(vm)
-                "proxy" -> ProxyPrefsPage(vm)
-                "conn" -> ConnPrefsPage(vm)
-                "crash" -> CrashLogPage()
+            }
+            "lang" -> LanguagePage(vm)
+            "backend" -> BackendPage(vm)
+            "panel" -> PanelPage(vm)
+            "proxy" -> ProxyPrefsPage(vm)
+            "conn" -> ConnPrefsPage(vm)
+            "crash" -> CrashLogPage { vm.crashPrompt = false }
+            "about" -> AboutPage(vm)
+        }
+    }
+}
+
+// ---------------- language (1.2.0) ----------------
+@Composable
+private fun LanguagePage(vm: MainViewModel) {
+    val ex = LocalExtra.current
+    Group(t("lang_title")) {
+        I18n.PREFS.forEach { k ->
+            RowItem(I18n.optionLabel(k), if (k == "system") t("lang_current_system", I18n.optionLabel(I18n.systemLang())) else null,
+                onClick = { if (I18n.pref != k) vm.setLanguage(k) }) {
+                if (I18n.pref == k) Icon(Icons.Outlined.Check, null, tint = ex.accent)
             }
         }
+    }
+    Text(t("lang_note"), Modifier.padding(start = 6.dp, end = 6.dp, top = 10.dp), fontSize = 13.sp, color = ex.subtle)
+}
+
+// ---------------- about ----------------
+@Composable
+private fun AboutPage(vm: MainViewModel) {
+    val ex = LocalExtra.current
+    val act = LocalContext.current as? android.app.Activity
+    var withdraw by remember { mutableStateOf(false) }
+    Group(null) {
+        RowItem(t("app_name_label"), t("app_name"))
+        RowItem(t("version"), "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+        RowItem(t("developer"), "$LEGAL_DEVELOPER · $LEGAL_CONTACT")
+        RowItem(t("compat_api"), t("compat_api_desc"))
+    }
+    Group(t("legal")) {
+        RowItem(t("privacy_policy"), onClick = { vm.legalDoc = "privacy" }) { Icon(Icons.Outlined.ChevronRight, null, tint = ex.subtle) }
+        RowItem(t("user_agreement"), onClick = { vm.legalDoc = "agreement" }) { Icon(Icons.Outlined.ChevronRight, null, tint = ex.subtle) }
+        RowItem(t("withdraw"), t("withdraw_desc"), onClick = { withdraw = true }) { Icon(Icons.Outlined.ChevronRight, null, tint = ex.subtle) }
+    }
+    if (withdraw) {
+        AlertDialog(
+            onDismissRequest = { withdraw = false },
+            title = { Text(t("withdraw_title")) }, text = { Text(t("withdraw_msg")) },
+            confirmButton = { TextButton({ withdraw = false; vm.declinePrivacy(); act?.finishAndRemoveTask() }) { Text(t("withdraw_exit"), color = ex.bad) } },
+            dismissButton = { TextButton({ withdraw = false }) { Text(t("cancel")) } },
+        )
     }
 }
 
@@ -135,10 +188,10 @@ private fun RowItem(title: String, desc: String? = null, onClick: (() -> Unit)? 
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 16.sp)
+            Text(title, fontSize = 16.sp, color = ex.text)
             if (!desc.isNullOrBlank()) Text(desc, fontSize = 13.sp, color = ex.subtle)
         }
-        trailing?.invoke()
+        if (trailing != null) { Spacer(Modifier.width(8.dp)); trailing() }
     }
 }
 
@@ -165,7 +218,7 @@ private fun BackendPage(vm: MainViewModel) {
     var editing by remember { mutableStateOf<Backend?>(null) }
     var confirm by remember { mutableStateOf<Pair<String, () -> Unit>?>(null) }
 
-    Group("后端列表") {
+    Group(t("backend_list")) {
         vm.backends.forEach { b ->
             val isActive = vm.active?.id == b.id
             Row(Modifier.fillMaxWidth().clickable { if (!isActive) vm.connect(b) }.padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -174,11 +227,11 @@ private fun BackendPage(vm: MainViewModel) {
                     Text(b.display, fontSize = 16.sp)
                     Text(b.baseUrl + if (b.secret.isNotEmpty()) " · 🔑" else "", fontSize = 12.sp, color = ex.subtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                IconButton({ editing = b }) { Icon(Icons.Outlined.Edit, "编辑") }
-                IconButton({ confirm = "删除后端 ${b.display}？" to { vm.deleteBackend(b) } }) { Icon(Icons.Outlined.Delete, "删除") }
+                IconButton({ editing = b }) { Icon(Icons.Outlined.Edit, t("edit_backend")) }
+                IconButton({ confirm = t("delete_backend_q", b.display) to { vm.deleteBackend(b) } }) { Icon(Icons.Outlined.Delete, null) }
             }
         }
-        RowItem("添加后端", onClick = { editing = Backend(vm.newBackendId()) }) { Icon(Icons.Outlined.Add, null) }
+        RowItem(t("add_backend"), onClick = { editing = Backend(vm.newBackendId()) }) { Icon(Icons.Outlined.Add, null) }
     }
 
     if (vm.connState == ConnState.Failed) {
@@ -187,45 +240,45 @@ private fun BackendPage(vm: MainViewModel) {
             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.ErrorOutline, null, tint = ex.bad)
                 Spacer(Modifier.width(10.dp))
-                Text("连接失败：${vm.connError}", Modifier.weight(1f), color = ex.bad)
-                TextButton({ vm.retry() }) { Text("重试") }
+                Text(t("conn_failed", vm.connError ?: ""), Modifier.weight(1f), color = ex.bad)
+                TextButton({ vm.retry() }) { Text(t("retry")) }
             }
         }
     }
 
     if (vm.connState == ConnState.Connected) {
         val c = vm.config
-        Group("内核") {
-            RowItem("版本", (vm.version.ifBlank { "未知（客户端未提供版本号）" }) + if (vm.isMeta) " · Meta" else "")
-            RowItem("代理模式") {
-                SegTabs(c.modes.map { modeName(it) }, c.modes.indexOf(c.mode).coerceAtLeast(0), { vm.setMode(c.modes[it]) })
+        Group(t("core")) {
+            RowItem(t("version"), (vm.version.ifBlank { t("version_unknown") }) + if (vm.isMeta) " · Meta" else "")
+            RowItem(t("proxy_mode")) {
+                SegTabs(c.modes.map { modeName(it) }, c.modes.indexOf(c.mode).coerceAtLeast(0), { vm.setMode(c.modes[it]) }, dense = I18n.isEn)
             }
-            RowItem("内核日志级别") {
+            RowItem(t("core_log_level")) {
                 DropdownChip(c.logLevel, listOf("debug", "info", "warning", "error", "silent").map { it to it }, { vm.setCoreLogLevel(it) }, Modifier.width(130.dp))
             }
         }
-        Group("网络") {
+        Group(t("network")) {
             vm.unsupported["patch"]?.let { code ->
-                Text("当前后端不允许修改配置 (HTTP $code)。模式、TUN、端口等需要在代理客户端 App 里修改。",
+                Text(t("patch_unsupported", code),
                     Modifier.padding(horizontal = 16.dp, vertical = 8.dp), fontSize = 13.sp, color = LocalExtra.current.bad)
             }
-            SwitchRow("TUN 模式", if (c.tunStack.isNotBlank()) "栈：${c.tunStack}" else null, c.tunEnable) { vm.setTun(it) }
-            SwitchRow("允许局域网连接", null, c.allowLan) { vm.setAllowLan(it) }
+            SwitchRow(t("tun_mode"), if (c.tunStack.isNotBlank()) t("tun_stack", c.tunStack) else null, c.tunEnable) { vm.setTun(it) }
+            SwitchRow(t("allow_lan"), null, c.allowLan) { vm.setAllowLan(it) }
             SwitchRow("IPv6", null, c.ipv6) { vm.setIpv6(it) }
-            if (c.bindAddress.isNotBlank()) RowItem("绑定地址", c.bindAddress)
-            PortRow("混合端口", "mixed-port", c.mixedPort, vm)
-            PortRow("HTTP 端口", "port", c.port, vm)
-            PortRow("SOCKS 端口", "socks-port", c.socksPort, vm)
-            PortRow("透明代理 Redir", "redir-port", c.redirPort, vm)
-            PortRow("TProxy 端口", "tproxy-port", c.tproxyPort, vm)
+            if (c.bindAddress.isNotBlank()) RowItem(t("bind_address"), c.bindAddress)
+            PortRow(t("port_mixed"), "mixed-port", c.mixedPort, vm)
+            PortRow(t("port_http"), "port", c.port, vm)
+            PortRow(t("port_socks"), "socks-port", c.socksPort, vm)
+            PortRow(t("port_redir"), "redir-port", c.redirPort, vm)
+            PortRow(t("port_tproxy"), "tproxy-port", c.tproxyPort, vm)
         }
-        Group("运维") {
-            OpRow(vm, "重载配置文件", Icons.Outlined.RestartAlt) { vm.coreAction("重载配置") { it.reloadConfigs() } }
-            OpRow(vm, "更新 GEO 数据库", Icons.Outlined.Public) { vm.coreAction("更新 GEO") { it.upgradeGeo() } }
-            OpRow(vm, "清空 FakeIP 缓存", Icons.Outlined.CleaningServices) { vm.coreAction("清空 FakeIP") { it.flushFakeIp() } }
-            OpRow(vm, "清空 DNS 缓存", Icons.Outlined.Dns) { vm.coreAction("清空 DNS 缓存") { it.flushDns() } }
-            OpRow(vm, "更新内核", Icons.Outlined.SystemUpdateAlt) { confirm = "确定升级内核？升级后内核会自动重启。" to { vm.coreAction("更新内核") { it.upgradeCore() } } }
-            OpRow(vm, "重启内核", Icons.Outlined.PowerSettingsNew, ex.bad) { confirm = "确定重启内核？" to { vm.coreAction("重启内核") { it.restart() } } }
+        Group(t("maintenance")) {
+            OpRow(vm, "reload", Icons.Outlined.RestartAlt) { vm.coreAction("reload") { it.reloadConfigs() } }
+            OpRow(vm, "geo", Icons.Outlined.Public) { vm.coreAction("geo") { it.upgradeGeo() } }
+            OpRow(vm, "fakeip", Icons.Outlined.CleaningServices) { vm.coreAction("fakeip") { it.flushFakeIp() } }
+            OpRow(vm, "dns", Icons.Outlined.Dns) { vm.coreAction("dns") { it.flushDns() } }
+            OpRow(vm, "upgrade", Icons.Outlined.SystemUpdateAlt) { confirm = t("op_upgrade_confirm") to { vm.coreAction("upgrade") { it.upgradeCore() } } }
+            OpRow(vm, "restart", Icons.Outlined.PowerSettingsNew, ex.bad) { confirm = t("op_restart_confirm") to { vm.coreAction("restart") { it.restart() } } }
         }
     }
 
@@ -233,13 +286,12 @@ private fun BackendPage(vm: MainViewModel) {
     confirm?.let { (msg, action) ->
         AlertDialog(
             onDismissRequest = { confirm = null }, title = { Text(msg) },
-            confirmButton = { TextButton({ confirm = null; action() }) { Text("确定") } },
-            dismissButton = { TextButton({ confirm = null }) { Text("取消") } },
+            confirmButton = { TextButton({ confirm = null; action() }) { Text(t("ok")) } },
+            dismissButton = { TextButton({ confirm = null }) { Text(t("cancel")) } },
         )
     }
 }
 
-private fun modeName(m: String) = when (m) { "rule" -> "规则"; "global" -> "全局"; "direct" -> "直连"; else -> m }
 
 @Composable
 private fun PortRow(title: String, key: String, value: Int, vm: MainViewModel) {
@@ -247,10 +299,10 @@ private fun PortRow(title: String, key: String, value: Int, vm: MainViewModel) {
     RowItem(title) {
         OutlinedTextField(
             text, { t -> text = t.filter { it.isDigit() }.take(5) }, Modifier.width(120.dp), singleLine = true,
-            placeholder = { Text("关闭") },
+            placeholder = { Text(t("off")) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             trailingIcon = {
-                if ((text.toIntOrNull() ?: 0) != value) IconButton({ vm.setPort(key, text.toIntOrNull() ?: 0) }) { Icon(Icons.Outlined.Check, "保存") }
+                if ((text.toIntOrNull() ?: 0) != value) IconButton({ vm.setPort(key, text.toIntOrNull() ?: 0) }) { Icon(Icons.Outlined.Check, t("save")) }
             },
         )
     }
@@ -274,32 +326,32 @@ fun BackendForm(vm: MainViewModel, initial: Backend, onSaved: (() -> Unit)? = nu
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         SegTabs(listOf("http", "https"), if (protocol == "https") 1 else 0, { protocol = if (it == 1) "https" else "http" })
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(host, { host = it }, Modifier.weight(1f), label = { Text("地址", maxLines = 1) }, singleLine = true)
-            OutlinedTextField(port, { port = it.filter { c -> c.isDigit() }.take(5) }, Modifier.width(110.dp), label = { Text("端口", maxLines = 1) }, singleLine = true,
+            OutlinedTextField(host, { host = it }, Modifier.weight(1f), label = { Text(t("f_host"), maxLines = 1) }, singleLine = true)
+            OutlinedTextField(port, { port = it.filter { c -> c.isDigit() }.take(5) }, Modifier.width(110.dp), label = { Text(t("f_port"), maxLines = 1) }, singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
         }
-        OutlinedTextField(path, { path = it }, Modifier.fillMaxWidth(), label = { Text("二级路径", maxLines = 1) }, placeholder = { Text("可选", maxLines = 1) }, singleLine = true)
+        OutlinedTextField(path, { path = it }, Modifier.fillMaxWidth(), label = { Text(t("f_path"), maxLines = 1) }, placeholder = { Text(t("optional"), maxLines = 1) }, singleLine = true)
         OutlinedTextField(
-            secret, { secret = it }, Modifier.fillMaxWidth(), label = { Text("密钥", maxLines = 1) }, placeholder = { Text("可选", maxLines = 1) }, singleLine = true,
+            secret, { secret = it }, Modifier.fillMaxWidth(), label = { Text(t("f_secret"), maxLines = 1) }, placeholder = { Text(t("optional"), maxLines = 1) }, singleLine = true,
             visualTransformation = if (showSecret) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = { IconButton({ showSecret = !showSecret }) { Icon(if (showSecret) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility, null) } },
         )
-        OutlinedTextField(label, { label = it }, Modifier.fillMaxWidth(), label = { Text("备注名", maxLines = 1) }, placeholder = { Text("可选", maxLines = 1) }, singleLine = true)
+        OutlinedTextField(label, { label = it }, Modifier.fillMaxWidth(), label = { Text(t("f_label"), maxLines = 1) }, placeholder = { Text(t("optional"), maxLines = 1) }, singleLine = true)
         status?.let { Text(it, fontSize = 13.sp, color = if (it.startsWith("✓")) ex.good else ex.bad) }
         OutlinedButton({
             busy = true; status = null
             scope.launch {
                 val r = vm.probe(build()); busy = false
-                status = r.fold({ "✓ 连接成功，内核 $it" }, { "✗ ${it.message ?: "连接失败"}" })
+                status = r.fold({ t("test_ok", it.ifBlank { t("no_version") }) }, { "✗ " + vm.errMsg(it) })
             }
         }, Modifier.fillMaxWidth(), enabled = !busy && host.isNotBlank() && port.isNotBlank()) {
             if (busy) { CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp); Spacer(Modifier.width(8.dp)) }
-            Text("测试连接", maxLines = 1)
+            Text(t("test_conn"), maxLines = 1)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (onCancel != null) OutlinedButton(onCancel, Modifier.weight(1f)) { Text("取消", maxLines = 1) }
+            if (onCancel != null) OutlinedButton(onCancel, Modifier.weight(1f)) { Text(t("cancel"), maxLines = 1) }
             Button({ vm.saveBackend(build()); onSaved?.invoke() }, Modifier.weight(1f), enabled = host.isNotBlank() && port.isNotBlank()) {
-                Text("保存并连接", maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                Text(t("save_connect"), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
             }
         }
     }
@@ -310,7 +362,7 @@ private fun BackendDialog(vm: MainViewModel, b: Backend, isNew: Boolean, onDismi
     androidx.compose.ui.window.Dialog(onDismiss) {
         Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface) {
             Column(Modifier.padding(18.dp)) {
-                Text(if (isNew) "添加后端" else "编辑后端", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                Text(if (isNew) t("add_backend") else t("edit_backend"), fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(12.dp))
                 BackendForm(vm, b, onSaved = onDismiss, onCancel = onDismiss)
             }
@@ -318,15 +370,13 @@ private fun BackendDialog(vm: MainViewModel, b: Backend, isNew: Boolean, onDismi
     }
 }
 
-private val opKeys = mapOf("重载配置文件" to "重载配置", "更新 GEO 数据库" to "更新 GEO", "清空 FakeIP 缓存" to "清空 FakeIP",
-    "清空 DNS 缓存" to "清空 DNS 缓存", "更新内核" to "更新内核", "重启内核" to "重启内核")
 
 @Composable
-private fun OpRow(vm: MainViewModel, title: String, icon: androidx.compose.ui.graphics.vector.ImageVector, tint: Color? = null, onClick: () -> Unit) {
-    val code = vm.unsupported[opKeys[title] ?: title]
+private fun OpRow(vm: MainViewModel, key: String, icon: androidx.compose.ui.graphics.vector.ImageVector, tint: Color? = null, onClick: () -> Unit) {
+    val code = vm.unsupported[key]
     val ex = LocalExtra.current
-    RowItem(title, code?.let { "当前后端不支持 (HTTP $it)" }, onClick = onClick) {
-        Icon(icon, null, tint = if (code != null) ex.subtle else tint ?: LocalContentColor.current)
+    RowItem(t("op_$key"), code?.let { t("unsupported_http", it) }, onClick = onClick) {
+        Icon(icon, null, tint = if (code != null) ex.subtle else tint ?: ex.text)
     }
 }
 
@@ -334,51 +384,121 @@ private fun OpRow(vm: MainViewModel, title: String, icon: androidx.compose.ui.gr
 @Composable
 private fun WallpaperGroup(vm: MainViewModel) {
     val ex = LocalExtra.current
+    val ctx = LocalContext.current
     val picker = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia(),
     ) { uri -> if (uri != null) vm.setWallpaper(uri) }
-    fun pick() = picker.launch(androidx.activity.result.PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly))
-    Group("壁纸") {
+    fun pick() = runCatching {
+        picker.launch(androidx.activity.result.PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly))
+    }.onFailure { toast(ctx, t("pick_image_failed")) }
+    Group(t("wallpaper")) {
         val wp = vm.wallpaper
         if (wp != null) {
             Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth().height(160.dp).clip(RoundedCornerShape(14.dp))) {
                 androidx.compose.foundation.Image(wp, null, Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
             }
         }
-        RowItem(if (wp == null) "上传壁纸" else "更换壁纸", "从相册选择一张图片作为面板背景", onClick = { pick() }) { Icon(Icons.Outlined.Wallpaper, null) }
+        RowItem(if (wp == null) t("wallpaper_upload") else t("wallpaper_change"), t("wallpaper_desc"), onClick = { pick() }) { Icon(Icons.Outlined.Wallpaper, null, tint = ex.text) }
         if (wp != null) {
-            SliderRow("卡片不透明度", vm.cardAlpha, 0.2f..1f, "${(vm.cardAlpha * 100).toInt()}%") { vm.cardAlpha = it; vm.savePrefs() }
-            SliderRow("壁纸暗化", vm.wallpaperDim, 0f..0.7f, "${(vm.wallpaperDim * 100).toInt()}%") { vm.wallpaperDim = it; vm.savePrefs() }
+            if (!vm.glassOn) SliderRow(t("card_opacity"), vm.cardAlpha, 0.2f..1f, "${(vm.cardAlpha * 100).roundToInt()}%") { vm.cardAlpha = it; vm.savePrefs() }
+            SliderRow(t("wallpaper_dim"), vm.wallpaperDim, 0f..0.7f, "${(vm.wallpaperDim * 100).roundToInt()}%") { vm.wallpaperDim = it; vm.savePrefs() }
             if (android.os.Build.VERSION.SDK_INT >= 31) {
-                SliderRow("壁纸模糊", vm.wallpaperBlur, 0f..30f, "${vm.wallpaperBlur.toInt()}") { vm.wallpaperBlur = it; vm.savePrefs() }
-            }
-            RowItem("移除壁纸", onClick = { vm.clearWallpaper() }) { Icon(Icons.Outlined.Delete, null, tint = ex.bad) }
+                SliderRow(t("wallpaper_blur"), vm.wallpaperBlur, 0f..30f, "${vm.wallpaperBlur.roundToInt()}") { vm.wallpaperBlur = it; vm.savePrefs() }
+            } else RowItem(t("wallpaper_blur"), t("wallpaper_blur_na"))
+            RowItem(t("wallpaper_remove"), onClick = { vm.clearWallpaper() }) { Icon(Icons.Outlined.Delete, null, tint = ex.bad) }
         }
     }
 }
 
 @Composable
 private fun SliderRow(title: String, value: Float, range: ClosedFloatingPointRange<Float>, label: String, onChange: (Float) -> Unit) {
+    val ex = LocalExtra.current
     Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
-        Row { Text(title, fontSize = 16.sp, modifier = Modifier.weight(1f)); Text(label, fontSize = 13.sp, color = LocalExtra.current.subtle) }
+        Row { Text(title, fontSize = 16.sp, color = ex.text, modifier = Modifier.weight(1f)); Text(label, fontSize = 13.sp, color = ex.subtle) }
         Slider(value, onChange, valueRange = range)
     }
 }
 
 // ---------------- panel page ----------------
+private val THEME_KEYS = listOf("system", "light", "dark")
+private val GLASS_KEYS = listOf("custom", "thin", "regular", "thick")
+
 @Composable
 private fun PanelPage(vm: MainViewModel) {
-    Group("外观") {
-        RowItem("主题") {
-            val opts = listOf("system" to "跟随系统", "light" to "浅色", "dark" to "深色")
-            SegTabs(opts.map { it.second }, opts.indexOfFirst { it.first == vm.theme }.coerceAtLeast(0), { vm.theme = opts[it].first; vm.savePrefs() })
+    val ex = LocalExtra.current
+    var accentMenu by remember { mutableStateOf(false) }
+    Group(t("appearance")) {
+        RowItem(t("theme")) {
+            SegTabs(THEME_KEYS.map { t("theme_$it") }, THEME_KEYS.indexOf(vm.theme).coerceAtLeast(0), { vm.theme = THEME_KEYS[it]; vm.savePrefs() }, dense = I18n.isEn)
+        }
+        RowItem(t("accent_color"), onClick = { accentMenu = true }) {
+            Box {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(14.dp).clip(CircleShape).background(ex.accent))
+                    Spacer(Modifier.width(8.dp))
+                    Text(t(findAccent(vm.accent).nameKey), fontSize = 15.sp, color = ex.accent, maxLines = 1)
+                    Spacer(Modifier.width(4.dp))
+                    Icon(Icons.Outlined.KeyboardArrowDown, null, Modifier.size(18.dp), tint = ex.subtle)
+                }
+                DropdownMenu(accentMenu, { accentMenu = false }, Modifier.widthIn(min = if (I18n.isEn) 240.dp else 220.dp)) {
+                    Text(t("accent_color"), Modifier.padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 8.dp), fontSize = 16.sp, fontWeight = FontWeight.Medium, color = ex.text)
+                    ACCENTS.forEach { a ->
+                        val on = vm.accent == a.key
+                        DropdownMenuItem(
+                            text = { Text(t(a.nameKey), color = if (on) ex.accent else ex.text, fontWeight = if (on) FontWeight.Medium else FontWeight.Normal, maxLines = 1) },
+                            leadingIcon = { Box(Modifier.size(20.dp).clip(CircleShape).background(if (ex.dark) a.dark else a.light)) },
+                            trailingIcon = { if (on) Icon(Icons.Outlined.Check, null, tint = ex.accent) },
+                            onClick = { vm.setAccentKey(a.key); accentMenu = false },
+                        )
+                    }
+                }
+            }
+        }
+        // color preview
+        Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(t("color_preview"), fontSize = 13.sp, color = ex.subtle)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(t("preview_button"), Modifier.clip(RoundedCornerShape(16.dp)).background(ex.accent).padding(horizontal = 16.dp, vertical = 7.dp), fontSize = 14.sp, color = ex.onAccent)
+                Text(t("preview_tag"), Modifier.clip(RoundedCornerShape(16.dp)).background(ex.accentSoft).padding(horizontal = 12.dp, vertical = 7.dp), fontSize = 14.sp, color = ex.accent)
+                Spacer(Modifier.weight(1f))
+                Switch(true, null)
+            }
+            Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(ex.chip)) {
+                Box(Modifier.fillMaxWidth(0.62f).fillMaxHeight().clip(RoundedCornerShape(3.dp)).background(ex.accent))
+            }
         }
     }
-    WallpaperGroup(vm)
-    Group("关于") {
-        RowItem("Clash 面板", "版本 ${BuildConfig.VERSION_NAME} · Kotlin + Jetpack Compose 原生实现")
-        RowItem("兼容内核", "mihomo (Clash.Meta) RESTful API，部分功能兼容原版 Clash")
+
+    Group(t("nav_bar")) {
+        SwitchRow(t("auto_hide_nav"), t("auto_hide_nav_desc"), vm.autoHideNav) { vm.setAutoHide(it) }
     }
+
+    Group(t("glass")) {
+        SwitchRow(t("glass"), t("glass_desc"), vm.glassOn) { vm.glassOn = it; vm.savePrefs() }
+        if (vm.glassOn) {
+            // title above the segments: four options (longer in English) don't fit beside the title
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(t("material"), fontSize = 16.sp, color = ex.text)
+                SegTabs(GLASS_KEYS.map { t("glass_$it") }, GLASS_KEYS.indexOf(vm.glassStyle).coerceAtLeast(0), { vm.glassStyle = GLASS_KEYS[it]; vm.savePrefs() }, dense = I18n.isEn)
+            }
+            SliderRow(t("blur_strength"), vm.glassBlur.toFloat(), 0f..100f, "${vm.glassBlur}") { vm.glassBlur = it.roundToInt(); vm.savePrefs() }
+            SliderRow(t("card_opacity"), vm.glassAlpha, 0.1f..0.95f, "${(vm.glassAlpha * 100).roundToInt()}%") { vm.glassAlpha = (it * 100).roundToInt() / 100f; vm.savePrefs() }
+            SwitchRow(t("glass_rows"), t("glass_rows_desc"), vm.glassRows) { vm.glassRows = it; vm.savePrefs() }
+        }
+        RowItem(t("blur_support"), if (BLUR_SUPPORTED) t("blur_support_yes", android.os.Build.VERSION.RELEASE) else t("blur_support_no", android.os.Build.VERSION.RELEASE))
+    }
+
+    Group(t("light")) {
+        SwitchRow(t("light"), t("light_desc"), vm.lightOn) { vm.setLight(it) }
+        if (vm.lightOn) {
+            SliderRow(t("light_intensity"), vm.lightIntensity, 0f..1f, "${(vm.lightIntensity * 100).roundToInt()}%") { vm.lightIntensity = (it * 100).roundToInt() / 100f; vm.savePrefs() }
+            SwitchRow(t("light_tilt"), t("light_tilt_desc"), vm.lightTilt) { vm.setLightTiltOn(it) }
+            SwitchRow(t("light_glow"), t("light_glow_desc"), vm.lightGlow) { vm.lightGlow = it; vm.savePrefs() }
+            SwitchRow(t("light_sweep"), t("light_sweep_desc"), vm.lightSweep) { vm.lightSweep = it; vm.savePrefs() }
+        }
+    }
+
+    WallpaperGroup(vm)
 }
 
 @Composable
@@ -410,40 +530,42 @@ fun LineChart(series: List<Pair<List<Float>, Color>>, modifier: Modifier) {
 }
 
 // ---------------- proxy prefs ----------------
+private val SORT_KEYS = listOf("default", "latency", "name")
+
 @Composable
 private fun ProxyPrefsPage(vm: MainViewModel) {
+    val ex = LocalExtra.current
     var url by remember { mutableStateOf(vm.testUrl) }
-    Group("测速") {
+    Group(t("latency_test")) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-            OutlinedTextField(url, { url = it; vm.testUrl = it.trim(); vm.savePrefs() }, Modifier.fillMaxWidth(), label = { Text("测速 URL") }, singleLine = true)
+            OutlinedTextField(url, { url = it; vm.testUrl = it.trim(); vm.savePrefs() }, Modifier.fillMaxWidth(), label = { Text(t("test_url")) }, singleLine = true)
         }
-        NumberRow("超时", vm.testTimeout, "ms") { vm.testTimeout = it; vm.savePrefs() }
-        SwitchRow("优先使用代理组自带的测速 URL", null, vm.groupTestUrlFirst) { vm.groupTestUrlFirst = it; vm.savePrefs() }
-        NumberRow("低延迟阈值（绿色）", vm.lowLatency, "ms") { vm.lowLatency = it; vm.savePrefs() }
-        NumberRow("中延迟阈值（黄色）", vm.mediumLatency, "ms") { vm.mediumLatency = it; vm.savePrefs() }
+        NumberRow(t("test_timeout"), vm.testTimeout, "ms") { vm.testTimeout = it; vm.savePrefs() }
+        SwitchRow(t("group_url_first"), null, vm.groupTestUrlFirst) { vm.groupTestUrlFirst = it; vm.savePrefs() }
+        NumberRow(t("low_latency"), vm.lowLatency, "ms") { vm.lowLatency = it; vm.savePrefs() }
+        NumberRow(t("medium_latency"), vm.mediumLatency, "ms") { vm.mediumLatency = it; vm.savePrefs() }
     }
-    Group("代理组展示") {
-        RowItem("节点排序") {
-            val opts = listOf("default" to "默认", "latency" to "延迟", "name" to "名称")
-            SegTabs(opts.map { it.second }, opts.indexOfFirst { it.first == vm.sortProxies }.coerceAtLeast(0), { vm.sortProxies = opts[it].first; vm.savePrefs() })
+    Group(t("group_display")) {
+        RowItem(t("node_sort")) {
+            SegTabs(SORT_KEYS.map { t("psort_$it") }, SORT_KEYS.indexOf(vm.sortProxies).coerceAtLeast(0), { vm.sortProxies = SORT_KEYS[it]; vm.savePrefs() }, dense = I18n.isEn)
         }
-        RowItem("每行卡片数") {
+        RowItem(t("cards_per_row")) {
             SegTabs(listOf("1", "2", "3"), vm.proxyCols - 1, { vm.proxyCols = it + 1; vm.savePrefs() })
         }
-        SwitchRow("隐藏不可用节点", null, vm.hideUnavailable) { vm.hideUnavailable = it; vm.savePrefs() }
-        SwitchRow("显示 GLOBAL 代理组", null, vm.showGlobal) { vm.showGlobal = it; vm.savePrefs() }
-        SwitchRow("显示隐藏的代理组", "配置中 hidden: true 的代理组", vm.showHiddenGroups) { vm.showHiddenGroups = it; vm.savePrefs() }
+        SwitchRow(t("hide_unavailable"), null, vm.hideUnavailable) { vm.hideUnavailable = it; vm.savePrefs() }
+        SwitchRow(t("show_global"), null, vm.showGlobal) { vm.showGlobal = it; vm.savePrefs() }
+        SwitchRow(t("show_hidden_groups"), t("show_hidden_desc"), vm.showHiddenGroups) { vm.showHiddenGroups = it; vm.savePrefs() }
     }
 }
 
 // ---------------- connection prefs ----------------
 @Composable
 private fun ConnPrefsPage(vm: MainViewModel) {
-    Group("保留数量") {
-        NumberRow("已关闭连接保留", vm.closedConnMax, "条") { vm.closedConnMax = it.coerceAtLeast(10); vm.savePrefs() }
-        NumberRow("日志保留", vm.logMax, "条") { vm.logMax = it.coerceAtLeast(50); vm.savePrefs() }
+    Group(t("keep_counts")) {
+        NumberRow(t("closed_keep"), vm.closedConnMax, t("unit_items")) { vm.closedConnMax = it.coerceAtLeast(10); vm.savePrefs() }
+        NumberRow(t("logs_keep"), vm.logMax, t("unit_items")) { vm.logMax = it.coerceAtLeast(50); vm.savePrefs() }
     }
-    Group("规则") {
-        SwitchRow("显示规则命中次数", "需要内核支持", vm.showRuleHits) { vm.showRuleHits = it; vm.savePrefs() }
+    Group(t("rules")) {
+        SwitchRow(t("show_rule_hits"), t("needs_core_support"), vm.showRuleHits) { vm.showRuleHits = it; vm.savePrefs() }
     }
 }

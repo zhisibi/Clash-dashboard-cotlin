@@ -12,6 +12,9 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.json.*
 import net.zash.clashpanel.data.*
+import net.zash.clashpanel.i18n.I18n
+import net.zash.clashpanel.i18n.PRIVACY_VERSION
+import net.zash.clashpanel.i18n.t
 import java.util.UUID
 
 enum class ConnState { Idle, Connecting, Connected, Failed }
@@ -47,6 +50,35 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var wallpaperBlur by mutableFloatStateOf(prefs.wallpaperBlur)
     var wallpaperDim by mutableFloatStateOf(prefs.wallpaperDim)
     var wallpaper by mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null); private set
+
+    // ----- appearance (1.1.3 – 1.1.5 of the HarmonyOS app) -----
+    var accent by mutableStateOf(net.zash.clashpanel.ui.findAccent(prefs.str("accent", "blue")).key); private set
+    var glassOn by mutableStateOf(prefs.bool("glass_on", false))
+    var glassStyle by mutableStateOf(prefs.str("glass_style", "custom").let { if (it in listOf("custom", "thin", "regular", "thick")) it else "custom" })
+    var glassBlur by mutableIntStateOf(prefs.int("glass_blur", 45))
+    var glassAlpha by mutableFloatStateOf(prefs.float("glass_alpha", 0.55f))
+    var glassRows by mutableStateOf(prefs.bool("glass_rows", false))
+    var lightOn by mutableStateOf(prefs.bool("light_on", false)); private set
+    var lightIntensity by mutableFloatStateOf(prefs.float("light_intensity", 0.6f))
+    var lightTilt by mutableStateOf(prefs.bool("light_tilt", false)); private set
+    var lightGlow by mutableStateOf(prefs.bool("light_glow", true))
+    var lightSweep by mutableStateOf(prefs.bool("light_sweep", true))
+    /** Light direction (degrees clockwise from the top); follows the gravity sensor when enabled */
+    var lightDeg by mutableIntStateOf(330)
+    var autoHideNav by mutableStateOf(prefs.bool("auto_hide_nav", true)); private set
+    var navCollapsed by mutableStateOf(false); private set
+
+    // ----- navigation -----
+    var tab by mutableIntStateOf(0)
+    /** Open settings sub-page: "" | lang | backend | panel | proxy | conn | crash | about */
+    var settingsPage by mutableStateOf("")
+    /** Legal document shown full screen: "" | privacy | agreement */
+    var legalDoc by mutableStateOf("")
+    var privacyAgreed by mutableStateOf(prefs.int("privacy_agreed", 0) >= PRIVACY_VERSION); private set
+    private var pendingBackend: Backend? = null
+    var crashPrompt by mutableStateOf(CrashLog.hasUnseen(app))
+    /** Per-page UI state (filters, tabs…), kept across page swipes and language switches */
+    val ui = UiState()
     private val wallpaperFile get() = java.io.File(getApplication<Application>().filesDir, "wallpaper.img")
 
     // ----- proxies -----
@@ -89,12 +121,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val toasts = MutableSharedFlow<String>(extraBufferCapacity = 8)
     val toastFlow = toasts.asSharedFlow()
 
-    private var api: ClashApi? = null
+    private var api: CoreApi? = null
     private var wsJobs = mutableListOf<Job>()
     private var logJob: Job? = null
 
     init {
-        active?.let { connect(it) }
+        I18n.init(prefs.str("lang", "system"))
+        ui.connSort = prefs.connSort; ui.connDesc = prefs.connSortDesc
+        // No network requests before the privacy policy / user agreement are accepted
+        active?.let { if (privacyAgreed) connect(it) else pendingBackend = it }
         viewModelScope.launch { wallpaper = withContext(Dispatchers.IO) { loadWallpaper() } }
     }
 
@@ -122,37 +157,42 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
 
-    fun setWallpaper(uri: android.net.Uri) = launchSafe("设置壁纸") {
+    fun setWallpaper(uri: android.net.Uri) = launchSafe(t("wallpaper"), null) {
         withContext(Dispatchers.IO) {
             val app = getApplication<Application>()
             app.contentResolver.openInputStream(uri)!!.use { input -> wallpaperFile.outputStream().use { input.copyTo(it) } }
         }
         val bmp = withContext(Dispatchers.IO) { loadWallpaper() }
-        if (bmp == null) { wallpaperFile.delete(); toast("无法读取这张图片") } else { wallpaper = bmp; toast("壁纸已更新") }
+        if (bmp == null) { wallpaperFile.delete(); toast(t("wallpaper_read_failed")) } else { wallpaper = bmp; toast(t("wallpaper_updated")) }
     }
 
     fun clearWallpaper() { wallpaperFile.delete(); wallpaper = null }
 
-    private fun toast(s: String) { toasts.tryEmit(s) }
+    fun toast(s: String) { toasts.tryEmit(s) }
 
-    private fun errMsg(e: Throwable): String = when (e) {
-        is ApiException -> if (e.code == 401) "密钥错误 (401)" else e.message ?: "HTTP ${e.code}"
-        is java.net.ConnectException -> "无法连接后端"
-        is java.net.SocketTimeoutException -> "连接超时"
+    fun errMsg(e: Throwable): String = when (e) {
+        is ApiException -> if (e.code == 401) t("err_401") else e.message ?: "HTTP ${e.code}"
+        is java.net.ConnectException -> t("err_connect")
+        is java.net.SocketTimeoutException -> t("err_timeout")
+        is java.net.UnknownHostException -> t("err_dns")
+        is java.net.UnknownServiceException -> t("err_cleartext")
         else -> e.message ?: e.javaClass.simpleName
     }
 
     fun isUnsupported(key: String) = unsupported.containsKey(key)
 
-    private fun launchSafe(label: String? = null, key: String? = label, block: suspend CoroutineScope.() -> Unit) =
-        viewModelScope.launch {
-            try { block() } catch (e: CancellationException) { throw e } catch (e: Throwable) {
-                if (e is ApiException && e.code in setOf(404, 405, 501) && key != null) {
-                    unsupported[key] = e.code
-                    toast("${label ?: key}失败：当前后端不支持此接口 (HTTP ${e.code})")
-                } else toast((label?.let { "${it}失败: " } ?: "") + errMsg(e))
-            }
+    /** Runs [block]; failures become a toast. 404/405/501 mark [key] as "not supported by this backend". Returns success. */
+    private suspend fun run(label: String?, key: String?, block: suspend CoroutineScope.() -> Unit): Boolean =
+        try { coroutineScope { block() }; true } catch (e: CancellationException) { throw e } catch (e: Throwable) {
+            if (e is ApiException && e.code in setOf(404, 405, 501) && key != null) {
+                unsupported[key] = e.code
+                toast(t("op_failed_unsupported", label ?: key, e.code))
+            } else toast(if (label != null) t("op_failed", label, errMsg(e)) else errMsg(e))
+            false
         }
+
+    private fun launchSafe(label: String? = null, key: String? = label, block: suspend CoroutineScope.() -> Unit) =
+        viewModelScope.launch { run(label, key, block) }
 
     // ================= backend management =================
     fun saveBackend(b: Backend, activate: Boolean = true) {
@@ -174,6 +214,32 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // ================= privacy consent =================
+    fun agreePrivacy() {
+        prefs.put("privacy_agreed", PRIVACY_VERSION)
+        privacyAgreed = true
+        val b = pendingBackend; pendingBackend = null
+        if (b != null && connState == ConnState.Idle) connect(b)
+    }
+
+    /** Decline / withdraw: clear consent and stop all network activity (the activity then finishes). */
+    fun declinePrivacy() {
+        prefs.remove("privacy_agreed")
+        privacyAgreed = false
+        stopStreams(); api = null
+        pendingBackend = active
+        connState = ConnState.Idle
+    }
+
+    // ================= appearance =================
+    fun setAccentKey(k: String) { accent = net.zash.clashpanel.ui.findAccent(k).key; prefs.put("accent", accent) }
+    fun setLanguage(p: String) { prefs.put("lang", p); I18n.choose(p) }
+    fun setLight(on: Boolean) { lightOn = on; if (!on) lightDeg = 330; savePrefs() }
+    fun setLightTiltOn(on: Boolean) { lightTilt = on; if (!on) lightDeg = 330; savePrefs() }
+    fun setAutoHide(on: Boolean) { autoHideNav = on; savePrefs(); if (!on) expandNav() }
+    fun expandNav() { if (navCollapsed) navCollapsed = false }
+    fun collapseNav() { if (autoHideNav && !navCollapsed) navCollapsed = true }
+
     fun disconnect() {
         stopStreams()
         api = null; active = null; prefs.activeBackendId = null
@@ -184,7 +250,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun connect(b: Backend) {
         stopStreams()
         active = b; prefs.activeBackendId = b.id
-        val a = ClashApi(b); api = a
+        val a = CoreApi(b); api = a
         connState = ConnState.Connecting; connError = null
         unsupported.clear()
         proxies = emptyMap(); providers = emptyList(); rules = emptyList(); ruleProviders = emptyList()
@@ -206,12 +272,50 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Test a backend without switching to it. */
-    suspend fun probe(b: Backend): Result<String> = runCatching { ClashApi(b).version().first }
+    suspend fun probe(b: Backend): Result<String> = runCatching { CoreApi(b).version().first }
 
     fun retry() { active?.let { connect(it) } }
 
     fun refreshAll() {
         refreshConfig(); refreshProxies(); refreshRules()
+    }
+
+    // ================= pull to refresh (HarmonyOS 1.1.9 semantics) =================
+    /**
+     * Returns when the requests finish (success or failure) so the indicator can stay until then; failures toast.
+     * Overview: probe + config/proxies/rules; proxies/rules: reload; connections/logs: probe then restart the streams;
+     * a failed / connecting backend is reconnected once. No network before the privacy consent.
+     */
+    suspend fun pullRefresh(page: String) {
+        if (!privacyAgreed) return
+        val a = api
+        if (a == null) { toast(if (active == null) t("not_connected_yet") else t("backend_not_connected")); return }
+        if (connState != ConnState.Connected) {
+            val b = active ?: return
+            connect(b)
+            val t0 = System.currentTimeMillis()
+            while (connState == ConnState.Connecting && System.currentTimeMillis() - t0 < 8000) delay(150)
+            if (connState != ConnState.Connected) toast(t("refresh_failed", connError ?: t("err_connect")))
+            return
+        }
+        val L = t("act_refresh")
+        when (page) {
+            "proxies" -> run(L, null) { loadProxies(a) }
+            "rules" -> run(L, null) { loadRules(a) }
+            "connections", "logs" -> {
+                if (run(L, null) { a.version() } && api === a) { stopStreams(); startStreams(a) }
+            }
+            else -> {
+                val ok = run(L, null) { val v = a.version().first; if (api === a) version = v }
+                if (!ok || api !== a) return
+                coroutineScope {
+                    launch { run(L, null) { config = a.configs() } }
+                    launch { run(L, null) { loadProxies(a) } }
+                    launch { run(L, null) { loadRules(a) } }
+                }
+                if (api === a && wsJobs.isEmpty()) startStreams(a)
+            }
+        }
     }
 
     // ================= streams =================
@@ -220,7 +324,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         logJob?.cancel(); logJob = null
     }
 
-    private fun startStreams(a: ClashApi) {
+    private fun startStreams(a: CoreApi) {
         wsJobs += stream(a, "/traffic") { e ->
             val o = e.jsonObject
             val t = Traffic(o.l("up"), o.l("down"), o.l("upTotal"), o.l("downTotal"))
@@ -236,7 +340,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         restartLogs(a)
     }
 
-    private fun restartLogs(a: ClashApi) {
+    private fun restartLogs(a: CoreApi) {
         logJob?.cancel()
         logJob = stream(a, "/logs?level=$logLevel") { e ->
             if (logsPaused) return@stream
@@ -247,7 +351,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun stream(a: ClashApi, path: String, onMsg: (JsonElement) -> Unit): Job = viewModelScope.launch {
+    private fun stream(a: CoreApi, path: String, onMsg: (JsonElement) -> Unit): Job = viewModelScope.launch {
         var backoff = 1000L
         while (isActive && api === a) {
             try {
@@ -281,7 +385,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     // ================= config =================
     fun refreshConfig() = launchSafe { api?.let { config = it.configs() } }
 
-    fun setMode(mode: String) = launchSafe("切换模式", "patch") {
+    fun setMode(mode: String) = launchSafe(t("act_mode"), "patch") {
         val a = api ?: return@launchSafe
         a.patchConfigs(buildJsonObject { put("mode", mode) })
         config = config.copy(mode = mode)
@@ -296,29 +400,34 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun setTun(enable: Boolean) = patchConfig("TUN", buildJsonObject { put("tun", buildJsonObject { put("enable", enable) }) }) { it.copy(tunEnable = enable) }
-    fun setAllowLan(v: Boolean) = patchConfig("局域网", buildJsonObject { put("allow-lan", v) }) { it.copy(allowLan = v) }
+    fun setAllowLan(v: Boolean) = patchConfig(t("act_lan"), buildJsonObject { put("allow-lan", v) }) { it.copy(allowLan = v) }
     fun setIpv6(v: Boolean) = patchConfig("IPv6", buildJsonObject { put("ipv6", v) }) { it.copy(ipv6 = v) }
-    fun setCoreLogLevel(v: String) = patchConfig("日志级别", buildJsonObject { put("log-level", v) }) { it.copy(logLevel = v) }
-    fun setPort(key: String, v: Int) = patchConfig("端口", buildJsonObject { put(key, v) }) { it }
+    fun setCoreLogLevel(v: String) = patchConfig(t("act_loglevel"), buildJsonObject { put("log-level", v) }) { it.copy(logLevel = v) }
+    fun setPort(key: String, v: Int) = patchConfig(t("act_port"), buildJsonObject { put(key, v) }) { it }
 
-    fun coreAction(label: String, block: suspend (ClashApi) -> Unit) = launchSafe(label) {
-        val a = api ?: return@launchSafe
-        block(a)
-        toast("$label 成功")
-        if (label != "重启内核") { delay(500); refreshAll() } else { delay(2500); retry() }
+    /** Core maintenance op; key (reload | geo | fakeip | dns | upgrade | restart) also marks "unsupported"; label is t("op_" + key). */
+    fun coreAction(key: String, block: suspend (CoreApi) -> Unit) {
+        val label = t("op_$key")
+        launchSafe(label, key) {
+            val a = api ?: return@launchSafe
+            block(a)
+            toast(t("act_ok", label))
+            if (key != "restart") { delay(500); refreshAll() } else { delay(2500); retry() }
+        }
     }
 
     // ================= proxies =================
-    fun refreshProxies() = launchSafe {
-        val a = api ?: return@launchSafe
+    fun refreshProxies() = launchSafe { api?.let { loadProxies(it) } }
+
+    private suspend fun loadProxies(a: CoreApi) {
         proxiesLoading = true
         try {
             coroutineScope {
                 val p = async { a.proxies() }
                 val pr = async { runCatching { a.proxyProviders() }.getOrDefault(emptyList()) }
-                proxies = p.await(); providers = pr.await()
+                val pv = p.await(); val prv = pr.await()
+                if (api === a) { proxies = pv; providers = prv; manualDelay.clear() }
             }
-            manualDelay.clear()
         } finally { proxiesLoading = false }
     }
 
@@ -373,10 +482,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun select(group: Proxy, name: String) = launchSafe("切换节点") {
+    fun select(group: Proxy, name: String) = launchSafe(t("act_select")) {
         val a = api ?: return@launchSafe
         if (!group.type.equals("Selector", true) && !group.type.equals("URLTest", true) && !group.type.equals("Fallback", true)) {
-            toast("${group.type} 类型的代理组不能手动选择"); return@launchSafe
+            toast(t("group_not_selectable", group.type)); return@launchSafe
         }
         a.selectProxy(group.name, name)
         proxies = proxies.toMutableMap().also { it[group.name] = group.copy(now = name, fixed = if (group.type.equals("Selector", true)) null else name) }
@@ -384,7 +493,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         refreshProxies()
     }
 
-    fun testGroup(g: Proxy) = launchSafe("测速") {
+    fun testGroup(g: Proxy) = launchSafe(t("act_test")) {
         val a = api ?: return@launchSafe
         if (testing[g.name] == true) return@launchSafe
         testing[g.name] = true
@@ -419,33 +528,33 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun testAllGroups() = groups.filter { it.name != "GLOBAL" }.forEach { testGroup(it) }
 
-    fun unfix(g: Proxy) = launchSafe("取消固定") { api?.unfixProxy(g.name); refreshProxies() }
+    fun unfix(g: Proxy) = launchSafe(t("act_unfix")) { api?.unfixProxy(g.name); refreshProxies() }
 
-    fun updateProvider(name: String) = launchSafe("更新订阅") { api?.updateProxyProvider(name); toast("$name 已更新"); refreshProxies() }
-    fun healthcheck(name: String) = launchSafe("健康检查") { testing["provider:$name"] = true; try { api?.healthcheckProvider(name); refreshProxies() } finally { testing.remove("provider:$name") } }
+    fun updateProvider(name: String) = launchSafe(t("act_update_sub")) { api?.updateProxyProvider(name); toast(t("updated_name", name)); refreshProxies() }
+    fun healthcheck(name: String) = launchSafe(t("act_healthcheck")) { testing["provider:$name"] = true; try { api?.healthcheckProvider(name); refreshProxies() } finally { testing.remove("provider:$name") } }
     fun updateAllProviders() = providers.forEach { updateProvider(it.name) }
 
     // ================= rules =================
-    fun refreshRules() = launchSafe {
-        val a = api ?: return@launchSafe
-        coroutineScope {
-            val r = async { a.rules() }
-            val rp = async { runCatching { a.ruleProviders() }.getOrDefault(emptyList()) }
-            rules = r.await(); ruleProviders = rp.await()
-        }
+    fun refreshRules() = launchSafe { api?.let { loadRules(it) } }
+
+    private suspend fun loadRules(a: CoreApi) = coroutineScope {
+        val r = async { a.rules() }
+        val rp = async { runCatching { a.ruleProviders() }.getOrDefault(emptyList()) }
+        val rv = r.await(); val rpv = rp.await()
+        if (api === a) { rules = rv; ruleProviders = rpv }
     }
 
-    fun toggleRule(r: Rule) = launchSafe("切换规则") {
+    fun toggleRule(r: Rule) = launchSafe(t("act_toggle_rule")) {
         val a = api ?: return@launchSafe
         try {
             a.setRuleDisabled(r.index, !r.disabled)
             rules = rules.map { if (it.index == r.index) it.copy(disabled = !r.disabled) else it }
         } catch (e: ApiException) {
-            if (e.code == 404 || e.code == 405) { rulesDisableSupported = false; toast("当前内核不支持禁用单条规则") } else throw e
+            if (e.code == 404 || e.code == 405) { rulesDisableSupported = false; toast(t("rule_disable_unsupported")) } else throw e
         }
     }
 
-    fun updateRuleProvider(name: String) = launchSafe("更新规则集") {
+    fun updateRuleProvider(name: String) = launchSafe(t("act_update_ruleset")) {
         updatingRuleProviders[name] = true
         try { api?.updateRuleProvider(name); refreshRules() } finally { updatingRuleProviders.remove(name) }
     }
@@ -453,9 +562,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun updateAllRuleProviders() = ruleProviders.forEach { updateRuleProvider(it.name) }
 
     // ================= connections =================
-    fun closeConn(id: String) = launchSafe("断开连接") { api?.closeConnection(id) }
-    fun closeConns(ids: List<String>) = launchSafe("断开连接") { val a = api ?: return@launchSafe; ids.forEach { runCatching { a.closeConnection(it) } } }
-    fun closeAll() = launchSafe("断开全部") { api?.closeAllConnections() }
+    fun closeConn(id: String) = launchSafe(t("act_close_conn")) { api?.closeConnection(id) }
+    fun closeConns(ids: List<String>) = launchSafe(t("act_close_conn")) { val a = api ?: return@launchSafe; ids.forEach { runCatching { a.closeConnection(it) } } }
+    fun closeAll() = launchSafe(t("act_close_all")) { api?.closeAllConnections() }
     fun clearClosed() { closedConns = emptyList() }
 
     // ================= logs =================
@@ -474,7 +583,33 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         prefs.showHiddenGroups = showHiddenGroups; prefs.logMax = logMax; prefs.closedConnMax = closedConnMax
         prefs.showRuleHits = showRuleHits
         prefs.cardAlpha = cardAlpha; prefs.wallpaperBlur = wallpaperBlur; prefs.wallpaperDim = wallpaperDim
+        prefs.put("glass_on", glassOn); prefs.put("glass_style", glassStyle); prefs.put("glass_blur", glassBlur)
+        prefs.put("glass_alpha", glassAlpha); prefs.put("glass_rows", glassRows)
+        prefs.put("light_on", lightOn); prefs.put("light_intensity", lightIntensity); prefs.put("light_tilt", lightTilt)
+        prefs.put("light_glow", lightGlow); prefs.put("light_sweep", lightSweep); prefs.put("auto_hide_nav", autoHideNav)
     }
 
+    fun setConnSort(s: String, desc: Boolean) { ui.connSort = s; ui.connDesc = desc; prefs.connSort = s; prefs.connSortDesc = desc }
+
     override fun onCleared() { stopStreams(); super.onCleared() }
+}
+
+/** Per-page UI state hoisted out of the pages (headers and bodies are composed separately). */
+class UiState {
+    var proxyTab by mutableIntStateOf(0)
+    var proxyQuery by mutableStateOf("")
+    var openGroup by mutableStateOf<String?>(null)
+    var connTab by mutableIntStateOf(0)
+    var connQuery by mutableStateOf("")
+    var connSort by mutableStateOf("start")
+    var connDesc by mutableStateOf(true)
+    var connSource by mutableStateOf("")
+    var connCompact by mutableStateOf(false)
+    var confirmClose by mutableStateOf(false)
+    var logQuery by mutableStateOf("")
+    var logType by mutableStateOf("")
+    var logNewestFirst by mutableStateOf(true)
+    var ruleTab by mutableIntStateOf(0)
+    var ruleQuery by mutableStateOf("")
+    var settingsQuery by mutableStateOf("")
 }
