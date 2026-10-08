@@ -141,7 +141,7 @@ fun RulesHeader(vm: MainViewModel) {
                 RoundIconButton(Icons.Outlined.Tune, dense = true) { menu = true }
                 DropdownMenu(menu, { menu = false }) {
                     DropdownMenuItem(text = { Text(t("show_hit_counts")) }, onClick = { vm.showRuleHits = !vm.showRuleHits; vm.savePrefs() },
-                        trailingIcon = { Checkbox(vm.showRuleHits, null) })
+                        trailingIcon = { Checkbox(vm.showRuleHits, null, colors = accentCheckboxColors()) })
                     DropdownMenuItem(text = { Text(t("act_refresh")) }, leadingIcon = { Icon(Icons.Outlined.Refresh, null) }, onClick = { menu = false; vm.refreshRules() })
                     if (vm.ruleProviders.isNotEmpty()) DropdownMenuItem(text = { Text(t("update_all_rulesets")) }, leadingIcon = { Icon(Icons.Outlined.Sync, null) },
                         onClick = { menu = false; vm.updateAllRuleProviders() })
@@ -179,14 +179,14 @@ fun RulesBody(vm: MainViewModel, top: Dp, bottom: Dp) {
                                 if (size > 0) { Spacer(Modifier.width(6.dp)); Text("($size)", fontSize = 13.sp, color = ex.subtle) }
                                 if (r.type == "RuleSet" && providerMap.containsKey(r.payload)) {
                                     Spacer(Modifier.width(6.dp))
-                                    if (vm.updatingRuleProviders[r.payload] == true) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                                    if (vm.updatingRuleProviders[r.payload] == true) CircularProgressIndicator(Modifier.size(16.dp), color = LocalPal.current.accentUi, strokeWidth = 2.dp)
                                     else Icon(Icons.Outlined.Sync, t("act_update_ruleset"), Modifier.size(18.dp).clickableNoRipple { vm.updateRuleProvider(r.payload) }, tint = ex.subtle)
                                 }
                             }
                             Spacer(Modifier.height(8.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (vm.rulesDisableSupported) {
-                                    Switch(!r.disabled, { vm.toggleRule(r) }, Modifier.height(28.dp))
+                                    Switch(!r.disabled, { vm.toggleRule(r) }, Modifier.height(28.dp), colors = accentSwitchColors())
                                     Spacer(Modifier.width(10.dp))
                                 }
                                 ProxyChainChip(vm, r.proxy)
@@ -216,7 +216,7 @@ fun RulesBody(vm: MainViewModel, top: Dp, bottom: Dp) {
                                     Text(t("updated_ago", fmtAgo(net.zash.clashpanel.data.parseIsoMillis(p.updatedAt))), fontSize = 12.sp, color = ex.subtle)
                                 }
                             }
-                            if (vm.updatingRuleProviders[p.name] == true) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                            if (vm.updatingRuleProviders[p.name] == true) CircularProgressIndicator(Modifier.size(20.dp), color = LocalPal.current.accentUi, strokeWidth = 2.dp)
                             else IconButton({ vm.updateRuleProvider(p.name) }) { Icon(Icons.Outlined.Sync, t("act_update_ruleset")) }
                         }
                     }

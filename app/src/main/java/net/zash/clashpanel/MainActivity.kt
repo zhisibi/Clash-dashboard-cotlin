@@ -302,7 +302,7 @@ private fun BottomBar(vm: MainViewModel, pager: PagerState, sweepKey: Int, onSel
             }, label = "bar") { c ->
                 if (c) {
                     Box(Modifier.size(DOT), contentAlignment = Alignment.Center) {
-                        Icon(TABS[sel.coerceIn(0, 5)].icon, null, Modifier.size(24.dp), tint = p.accent)
+                        Icon(TABS[sel.coerceIn(0, 5)].icon, null, Modifier.size(24.dp), tint = p.accentUi)
                     }
                 } else {
                     Row(Modifier.requiredWidth(full).fillMaxHeight().padding(6.dp)) {
@@ -315,7 +315,7 @@ private fun BottomBar(vm: MainViewModel, pager: PagerState, sweepKey: Int, onSel
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center,
                             ) {
-                                Icon(tab.icon, t(tab.title), Modifier.size(22.dp), tint = if (on) p.accent else p.text)
+                                Icon(tab.icon, t(tab.title), Modifier.size(22.dp), tint = if (on) p.accentUi else p.text)
                                 Spacer(Modifier.height(2.dp))
                                 AutoSizeLabel(t(tab.title), on, if (on) p.accent else p.text)
                             }
@@ -384,7 +384,7 @@ private fun ConsentScreen(vm: MainViewModel, onExit: () -> Unit) {
         Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = sys.calculateBottomPadding() + 16.dp)) {
             Button(onExit, Modifier.weight(1f).height(44.dp), colors = ButtonDefaults.buttonColors(containerColor = p.chip, contentColor = p.text)) { Text(t("disagree"), maxLines = 1) }
             Spacer(Modifier.width(12.dp))
-            Button({ vm.agreePrivacy() }, Modifier.weight(1f).height(44.dp)) { Text(t("agree"), maxLines = 1) }
+            Button({ vm.agreePrivacy() }, Modifier.weight(1f).height(44.dp), colors = primaryButtonColors()) { Text(t("agree"), maxLines = 1) }
         }
     }
 }
@@ -404,7 +404,7 @@ private fun SetupScreen(vm: MainViewModel) {
     Box(Modifier.fillMaxSize().background(p.bg).systemBarsPadding().imePadding()) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) {
             Spacer(Modifier.height(40.dp))
-            Icon(Icons.AutoMirrored.Outlined.Send, null, Modifier.size(56.dp), tint = p.accent)
+            Icon(Icons.AutoMirrored.Outlined.Send, null, Modifier.size(56.dp), tint = p.accentUi)
             Spacer(Modifier.height(16.dp))
             Text(t("setup_title"), fontSize = 26.sp, fontWeight = FontWeight.Medium, color = p.text)
             Spacer(Modifier.height(6.dp))

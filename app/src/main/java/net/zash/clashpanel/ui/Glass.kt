@@ -169,9 +169,9 @@ fun Modifier.glass(kind: GlassKind, shape: Shape, tint: Color? = null, border: B
     val lv = lightVec(c.lightDeg)
     var m: Modifier = this
     when (kind) {
-        GlassKind.Bar -> m = if (light && c.glow) m.shadow((14 + 10 * I).dp, shape, clip = false, ambientColor = p.accent.copy(alpha = 0.5f * I), spotColor = p.accent.copy(alpha = (if (p.dark) 0.9f else 0.7f) * I))
+        GlassKind.Bar -> m = if (light && c.glow) m.shadow((14 + 10 * I).dp, shape, clip = false, ambientColor = p.accentFill.copy(alpha = 0.5f * I), spotColor = p.accentFill.copy(alpha = (if (p.dark) 0.9f else 0.7f) * I))
         else m.shadow(10.dp, shape, clip = false, ambientColor = Color.Black.copy(alpha = 0.2f), spotColor = Color.Black.copy(alpha = 0.3f))
-        GlassKind.Card -> if (light && c.glow) m = m.shadow((6 + 10 * I).dp, shape, clip = false, ambientColor = p.accent.copy(alpha = 0.4f * I), spotColor = p.accent.copy(alpha = (if (p.dark) 0.8f else 0.5f) * I))
+        GlassKind.Card -> if (light && c.glow) m = m.shadow((6 + 10 * I).dp, shape, clip = false, ambientColor = p.accentFill.copy(alpha = 0.4f * I), spotColor = p.accentFill.copy(alpha = (if (p.dark) 0.8f else 0.5f) * I))
         else if (light) m = m.shadow((4 + 6 * I).dp, shape, clip = false, ambientColor = Color.Black.copy(alpha = 0.12f * I), spotColor = Color.Black.copy(alpha = 0.18f * I))
         else if (c.on) m = m.shadow(3.dp, shape, clip = false, ambientColor = Color.Black.copy(alpha = if (p.dark) 0.25f else 0.10f), spotColor = Color.Black.copy(alpha = if (p.dark) 0.3f else 0.12f))
         else -> {}
@@ -241,14 +241,14 @@ fun GlassBackdrop(lightOn: Boolean, lightDeg: Int) {
         // linear 160deg
         drawRect(Brush.linearGradient(
             0f to (if (p.dark) Color(0xFF15171C) else Color(0xFFF7F8FB)),
-            0.55f to lerp(if (p.dark) Color(0xFF111316) else Color(0xFFF4F4F6), p.accent, if (p.dark) 0.18f else 0.16f),
+            0.55f to lerp(if (p.dark) Color(0xFF111316) else Color(0xFFF4F4F6), p.accentFill, if (p.dark) 0.18f else 0.16f),
             1f to (if (p.dark) Color(0xFF0E1013) else Color(0xFFEEF0F4)),
             start = Offset(w * 0.32f, 0f), end = Offset(w * 0.68f, h),
         ))
         val cx = (if (lightOn) 30 + sin(Math.toRadians(lightDeg.toDouble())).toFloat() * 18 else 22f) / 100f
         val r1 = max(w, h) * 0.75f * 0.75f
         drawRect(Brush.radialGradient(
-            listOf(p.accent.copy(alpha = if (p.dark) 0.38f else 0.30f), p.accent.copy(alpha = 0f)),
+            listOf(p.accentFill.copy(alpha = if (p.dark) 0.38f else 0.30f), p.accentFill.copy(alpha = 0f)),
             center = Offset(w * cx, h * 0.18f), radius = r1,
         ))
         drawRect(Brush.radialGradient(

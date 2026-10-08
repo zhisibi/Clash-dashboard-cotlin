@@ -79,7 +79,7 @@ fun OverviewBody(vm: MainViewModel, top: Dp, bottom: Dp) {
                         Text(fmtBytes(vm.memory), fontSize = 12.sp, color = ex.subtle)
                     }
                     Spacer(Modifier.height(10.dp))
-                    LineChart(listOf(vm.memoryHistory.map { it.toFloat() } to ex.accent), Modifier.fillMaxWidth().height(110.dp))
+                    LineChart(listOf(vm.memoryHistory.map { it.toFloat() } to ex.accentUi), Modifier.fillMaxWidth().height(110.dp))
                 }
             }
 

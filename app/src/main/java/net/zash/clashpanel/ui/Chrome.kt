@@ -123,7 +123,7 @@ fun PageFrame(vm: MainViewModel, page: String?, topInset: Dp, content: @Composab
             PullToRefreshDefaults.Indicator(
                 state = state, isRefreshing = refreshing,
                 modifier = Modifier.align(Alignment.TopCenter).padding(top = topInset),
-                containerColor = p.solidCard, color = p.accent,
+                containerColor = p.solidCard, color = p.accentUi,
             )
         },
     ) { content() }
@@ -190,7 +190,7 @@ fun TiltSensor(enabled: Boolean, current: Int, onDeg: (Int) -> Unit) {
 fun Bullet(text: String) {
     val p = LocalPal.current
     Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.Top) {
-        androidx.compose.material3.Text("•", Modifier.width(14.dp), color = p.accent, fontSize = androidx.compose.ui.unit.TextUnit(14f, androidx.compose.ui.unit.TextUnitType.Sp))
+        androidx.compose.material3.Text("•", Modifier.width(14.dp), color = p.accentUi, fontSize = androidx.compose.ui.unit.TextUnit(14f, androidx.compose.ui.unit.TextUnitType.Sp))
         androidx.compose.material3.Text(text, Modifier.weight(1f), color = p.text, fontSize = androidx.compose.ui.unit.TextUnit(14f, androidx.compose.ui.unit.TextUnitType.Sp), lineHeight = androidx.compose.ui.unit.TextUnit(22f, androidx.compose.ui.unit.TextUnitType.Sp))
     }
 }

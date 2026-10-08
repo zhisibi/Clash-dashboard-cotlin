@@ -2,7 +2,7 @@
 
 [English](README_en.md) · 简体中文
 
-用 **Kotlin + Jetpack Compose** 编写的原生安卓管理面板，适用于与 mihomo 兼容的代理内核所提供的 `external-controller` RESTful API。界面与功能和 HarmonyOS 版咪咪面板 1.2.0 保持一致（毛玻璃、沉浸光感、主题色、左右滑动切页、下拉刷新、中英文界面）。
+用 **Kotlin + Jetpack Compose** 编写的原生安卓管理面板，适用于与 mihomo 兼容的代理内核所提供的 `external-controller` RESTful API。界面与功能和 HarmonyOS 版咪咪面板 1.2.1 保持一致（毛玻璃、沉浸光感、主题色、左右滑动切页、下拉刷新、中英文界面）。
 
 > App 本身**不包含代理内核**，也不会启动代理服务或 VPN，需要配合已在运行的后端使用（例如路由器或局域网电脑上的内核，或手机上的代理客户端开放的外部控制器）。
 
@@ -10,12 +10,21 @@
 | --- | --- |
 | 应用名 | 咪咪面板（英文 Mimi Panel） |
 | 包名 | `net.zash.clashpanel`（沿用旧版包名与签名，可直接覆盖升级，后端与设置保留） |
-| 版本 | 1.2.0（versionCode 1020000） |
+| 版本 | 1.2.1（versionCode 1020100） |
 | 系统要求 | Android 8.0 及以上（minSdk 26，targetSdk 35）；实时毛玻璃模糊需要 Android 12+ |
 | 权限 | 只有 `android.permission.INTERNET` |
 | 界面语言 | 简体中文、English（设置 → 语言，可跟随系统） |
 
 ## 更新日志
+
+### 1.2.1
+- 移植 HarmonyOS 1.2.1 的颜色对比度修复（图标/控件/大字 ≥3:1，正文 ≥4.5:1，WCAG）：
+  - 连接后端表单的 **保存并连接**、**测试连接** 按钮不再进入禁用态（Material 禁用态为 38% 透明，文字对比度仅约 2.2）；按钮始终可点，点击时校验：未填地址 / 端口或端口超出 1–65535 时弹出提示，将对应输入框标红，并在按钮上方显示“✗ 原因”；测试进行中再次点击会被忽略而不是变灰
+  - 次要文字、标签、输入框占位符、状态色（成功 / 警告 / 错误 / 日志信息）在浅色模式下加深，深色模式下次要文字与错误色提亮，日志信息色深色模式为 `#38BDF8`；在卡片、输入框、半透明毛玻璃卡片、顶栏与底栏上均达到 4.5:1
+  - 主题色拆分为 **文字色**（accent，≥4.5）/ **图标控件色**（accentUi，≥3）/ **装饰原色**（accentFill，仅背景渐变、光晕、色板）/ **按钮填充与按钮文字**（primary / onPrimary）：橘黄黄、哔哩粉、小草绿在浅色模式下保留原有亮色按钮并改用深色文字 `#1D2025`；深色模式下星河蓝、猫咪蓝、华为红、优雅紫按钮略加深以承载白字，其余三色用深色文字；色值与 HarmonyOS 版完全相同
+  - 主题色浅底（accentSoft）透明度由 14% / 24% 调整为 11% / 20%；新增上传/下载文字色（连接页 ↑ / ↓ 文字）
+  - Material 3 控件统一使用新配色：开关、单选框、复选框、滑块、进度条与加载圈、底部导航选中图标、每行卡片数筛选 Chip、选中节点描边、下拉刷新指示器、同意页“同意”按钮、关闭连接按钮、分段选项卡与激活的圆形按钮；Material 的 primary 改为文字色，保证 TextButton / OutlinedButton 文字与输入框聚焦标签达标
+- 新增 `scripts/check-contrast.py`：解析 `ui/Theme.kt`，按 `buildPalette()` 与 `Glass.kt` 计算全部 7 个主题色在浅色/深色下各配色与页面、卡片、输入框、弹窗、半透明卡片（默认不透明度 0.55，叠加毛玻璃背景渐变与光晕）、顶栏、底栏及 Material 控件之间的对比度，不达标时返回非 0（当前 0 项不达标）
 
 ### 1.2.0
 - **改名为咪咪面板（Mimi Panel）**：界面、字符串、文档中去掉第三方品牌字样；内部 API 客户端改名为 `CoreApi`。包名 `net.zash.clashpanel` 与签名不变，可以直接覆盖安装 1.1.x，已保存的后端与设置都会保留
@@ -79,6 +88,8 @@
 
 修改界面文字后运行 `python3 scripts/gen-i18n.py`：从 `i18n/strings_zh.json`、`i18n/strings_en.json` 与 `docs/*.md` 生成 `app/src/main/java/net/zash/clashpanel/i18n/Strings.kt`、`LegalTexts.kt`，并检查键是否一致。隐私政策有实质变更时递增 `i18n/I18n.kt` 中的 `PRIVACY_VERSION`，用户会被要求重新同意。
 
+修改 `ui/Theme.kt` 中的颜色后运行 `python3 scripts/check-contrast.py`（加 `-v` 查看各配色的最差对比度），须为 0 项不达标。
+
 ### 签名
 
 Release 签名从项目根目录的 `keystore.properties` 读取（已加入 `.gitignore`，不会提交）：
@@ -113,6 +124,7 @@ keyPassword=你的密码
 docs/                      # 隐私政策 / 用户协议（中英文）
 i18n/                      # 界面字符串表 strings_zh.json / strings_en.json
 scripts/gen-i18n.py        # 生成 Kotlin 字符串表与协议正文并检查键
+scripts/check-contrast.py  # 配色 WCAG 对比度检查（全部主题色 × 浅色/深色）
 app/src/main/java/net/zash/clashpanel/
 ├── MainActivity.kt        # 入口、首次同意页、首次设置、横向分页、毛玻璃顶栏、悬浮底栏
 ├── MainViewModel.kt       # 状态与业务逻辑（下拉刷新、隐私同意、外观设置）

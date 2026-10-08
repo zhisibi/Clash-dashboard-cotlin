@@ -146,11 +146,11 @@ fun RoundIconButton(icon: ImageVector, active: Boolean = false, tint: Color? = n
     val ex = LocalPal.current
     Box(
         Modifier.size(if (dense) 34.dp else 44.dp).clip(CircleShape)
-            .background(if (active) ex.accent else ex.chip)
+            .background(if (active) ex.primary else ex.chip)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, null, Modifier.size(if (dense) 18.dp else 20.dp), tint = tint ?: if (active) ex.onAccent else ex.text)
+        Icon(icon, null, Modifier.size(if (dense) 18.dp else 20.dp), tint = tint ?: if (active) ex.onPrimary else ex.text)
     }
 }
 
@@ -162,11 +162,11 @@ fun SegTabs(items: List<String>, selected: Int, onSelect: (Int) -> Unit, modifie
             val sel = i == selected
             Box(
                 Modifier.clip(RoundedCornerShape(if (dense) 9.dp else 11.dp))
-                    .background(if (sel) ex.accent else Color.Transparent)
+                    .background(if (sel) ex.primary else Color.Transparent)
                     .clickable { onSelect(i) }
                     .padding(horizontal = if (dense) 11.dp else 14.dp, vertical = if (dense) 5.dp else 7.dp),
             ) {
-                Text(s, color = if (sel) ex.onAccent else ex.subtle, fontSize = if (dense) 13.sp else 15.sp, maxLines = 1)
+                Text(s, color = if (sel) ex.onPrimary else ex.subtle, fontSize = if (dense) 13.sp else 15.sp, maxLines = 1)
             }
         }
     }

@@ -139,7 +139,7 @@ private fun LanguagePage(vm: MainViewModel) {
         I18n.PREFS.forEach { k ->
             RowItem(I18n.optionLabel(k), if (k == "system") t("lang_current_system", I18n.optionLabel(I18n.systemLang())) else null,
                 onClick = { if (I18n.pref != k) vm.setLanguage(k) }) {
-                if (I18n.pref == k) Icon(Icons.Outlined.Check, null, tint = ex.accent)
+                if (I18n.pref == k) Icon(Icons.Outlined.Check, null, tint = ex.accentUi)
             }
         }
     }
@@ -197,7 +197,7 @@ private fun RowItem(title: String, desc: String? = null, onClick: (() -> Unit)? 
 
 @Composable
 private fun SwitchRow(title: String, desc: String? = null, checked: Boolean, onChange: (Boolean) -> Unit) =
-    RowItem(title, desc, onClick = { onChange(!checked) }) { Switch(checked, onChange) }
+    RowItem(title, desc, onClick = { onChange(!checked) }) { Switch(checked, onChange, colors = accentSwitchColors()) }
 
 @Composable
 private fun NumberRow(title: String, value: Int, suffix: String = "", onChange: (Int) -> Unit) {
@@ -222,7 +222,7 @@ private fun BackendPage(vm: MainViewModel) {
         vm.backends.forEach { b ->
             val isActive = vm.active?.id == b.id
             Row(Modifier.fillMaxWidth().clickable { if (!isActive) vm.connect(b) }.padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(isActive, { vm.connect(b) })
+                RadioButton(isActive, { vm.connect(b) }, colors = accentRadioColors())
                 Column(Modifier.weight(1f)) {
                     Text(b.display, fontSize = 16.sp)
                     Text(b.baseUrl + if (b.secret.isNotEmpty()) " · 🔑" else "", fontSize = 12.sp, color = ex.subtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -321,14 +321,35 @@ fun BackendForm(vm: MainViewModel, initial: Backend, onSaved: (() -> Unit)? = nu
     var showSecret by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
+    /** Field that failed validation ("host" | "port"), highlighted in red */
+    var errField by remember { mutableStateOf("") }
     fun build() = initial.copy(protocol = protocol, host = host.trim(), port = port.trim(), secondaryPath = path.trim(), secret = secret, label = label.trim())
+
+    /**
+     * 1.2.1: the buttons are never disabled (Material's disabled state is 38% alpha, far below the contrast threshold);
+     * validate on tap instead: toast the problem, highlight the field and show the reason above the buttons.
+     */
+    fun validate(): Boolean {
+        val pn = port.trim().toIntOrNull()
+        val (key, msg) = when {
+            host.isBlank() -> "host" to t("err_host_required")
+            port.isBlank() -> "port" to t("err_port_required")
+            pn == null || pn < 1 || pn > 65535 -> "port" to t("err_port_invalid")
+            else -> "" to ""
+        }
+        errField = key
+        if (key.isNotEmpty()) { status = "✗ $msg"; vm.toast(msg); return false }
+        return true
+    }
+    fun clearErr(key: String) { if (errField == key) { errField = ""; status = null } }
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         SegTabs(listOf("http", "https"), if (protocol == "https") 1 else 0, { protocol = if (it == 1) "https" else "http" })
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(host, { host = it }, Modifier.weight(1f), label = { Text(t("f_host"), maxLines = 1) }, singleLine = true)
-            OutlinedTextField(port, { port = it.filter { c -> c.isDigit() }.take(5) }, Modifier.width(110.dp), label = { Text(t("f_port"), maxLines = 1) }, singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+            OutlinedTextField(host, { host = it; clearErr("host") }, Modifier.weight(1f), label = { Text(t("f_host"), maxLines = 1) }, singleLine = true,
+                isError = errField == "host")
+            OutlinedTextField(port, { port = it.filter { c -> c.isDigit() }.take(5); clearErr("port") }, Modifier.width(110.dp), label = { Text(t("f_port"), maxLines = 1) }, singleLine = true,
+                isError = errField == "port", keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
         }
         OutlinedTextField(path, { path = it }, Modifier.fillMaxWidth(), label = { Text(t("f_path"), maxLines = 1) }, placeholder = { Text(t("optional"), maxLines = 1) }, singleLine = true)
         OutlinedTextField(
@@ -339,18 +360,23 @@ fun BackendForm(vm: MainViewModel, initial: Backend, onSaved: (() -> Unit)? = nu
         OutlinedTextField(label, { label = it }, Modifier.fillMaxWidth(), label = { Text(t("f_label"), maxLines = 1) }, placeholder = { Text(t("optional"), maxLines = 1) }, singleLine = true)
         status?.let { Text(it, fontSize = 13.sp, color = if (it.startsWith("✓")) ex.good else ex.bad) }
         OutlinedButton({
+            // While a test runs, taps are ignored instead of greying the button out
+            if (busy || !validate()) return@OutlinedButton
             busy = true; status = null
             scope.launch {
                 val r = vm.probe(build()); busy = false
                 status = r.fold({ t("test_ok", it.ifBlank { t("no_version") }) }, { "✗ " + vm.errMsg(it) })
             }
-        }, Modifier.fillMaxWidth(), enabled = !busy && host.isNotBlank() && port.isNotBlank()) {
-            if (busy) { CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp); Spacer(Modifier.width(8.dp)) }
+        }, Modifier.fillMaxWidth()) {
+            if (busy) { CircularProgressIndicator(Modifier.size(18.dp), color = ex.accentUi, strokeWidth = 2.dp); Spacer(Modifier.width(8.dp)) }
             Text(t("test_conn"), maxLines = 1)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (onCancel != null) OutlinedButton(onCancel, Modifier.weight(1f)) { Text(t("cancel"), maxLines = 1) }
-            Button({ vm.saveBackend(build()); onSaved?.invoke() }, Modifier.weight(1f), enabled = host.isNotBlank() && port.isNotBlank()) {
+            Button({
+                if (!validate()) return@Button
+                vm.saveBackend(build()); onSaved?.invoke()
+            }, Modifier.weight(1f), colors = primaryButtonColors()) {
                 Text(t("save_connect"), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
             }
         }
@@ -415,7 +441,7 @@ private fun SliderRow(title: String, value: Float, range: ClosedFloatingPointRan
     val ex = LocalExtra.current
     Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
         Row { Text(title, fontSize = 16.sp, color = ex.text, modifier = Modifier.weight(1f)); Text(label, fontSize = 13.sp, color = ex.subtle) }
-        Slider(value, onChange, valueRange = range)
+        Slider(value, onChange, valueRange = range, colors = accentSliderColors())
     }
 }
 
@@ -434,7 +460,7 @@ private fun PanelPage(vm: MainViewModel) {
         RowItem(t("accent_color"), onClick = { accentMenu = true }) {
             Box {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(14.dp).clip(CircleShape).background(ex.accent))
+                    Box(Modifier.size(14.dp).clip(CircleShape).background(ex.accentFill))
                     Spacer(Modifier.width(8.dp))
                     Text(t(findAccent(vm.accent).nameKey), fontSize = 15.sp, color = ex.accent, maxLines = 1)
                     Spacer(Modifier.width(4.dp))
@@ -447,7 +473,7 @@ private fun PanelPage(vm: MainViewModel) {
                         DropdownMenuItem(
                             text = { Text(t(a.nameKey), color = if (on) ex.accent else ex.text, fontWeight = if (on) FontWeight.Medium else FontWeight.Normal, maxLines = 1) },
                             leadingIcon = { Box(Modifier.size(20.dp).clip(CircleShape).background(if (ex.dark) a.dark else a.light)) },
-                            trailingIcon = { if (on) Icon(Icons.Outlined.Check, null, tint = ex.accent) },
+                            trailingIcon = { if (on) Icon(Icons.Outlined.Check, null, tint = ex.accentUi) },
                             onClick = { vm.setAccentKey(a.key); accentMenu = false },
                         )
                     }
@@ -458,13 +484,13 @@ private fun PanelPage(vm: MainViewModel) {
         Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(t("color_preview"), fontSize = 13.sp, color = ex.subtle)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(t("preview_button"), Modifier.clip(RoundedCornerShape(16.dp)).background(ex.accent).padding(horizontal = 16.dp, vertical = 7.dp), fontSize = 14.sp, color = ex.onAccent)
+                Text(t("preview_button"), Modifier.clip(RoundedCornerShape(16.dp)).background(ex.primary).padding(horizontal = 16.dp, vertical = 7.dp), fontSize = 14.sp, color = ex.onPrimary)
                 Text(t("preview_tag"), Modifier.clip(RoundedCornerShape(16.dp)).background(ex.accentSoft).padding(horizontal = 12.dp, vertical = 7.dp), fontSize = 14.sp, color = ex.accent)
                 Spacer(Modifier.weight(1f))
-                Switch(true, null)
+                Switch(true, null, colors = accentSwitchColors())
             }
             Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(ex.chip)) {
-                Box(Modifier.fillMaxWidth(0.62f).fillMaxHeight().clip(RoundedCornerShape(3.dp)).background(ex.accent))
+                Box(Modifier.fillMaxWidth(0.62f).fillMaxHeight().clip(RoundedCornerShape(3.dp)).background(ex.accentUi))
             }
         }
     }

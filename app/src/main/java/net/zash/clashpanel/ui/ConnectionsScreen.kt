@@ -77,8 +77,8 @@ fun ConnectionsHeader(vm: MainViewModel) {
             SegTabs(listOf(t("seg_active", vm.activeConns.size), t("seg_closed", vm.closedConns.size), t("seg_all")), ui.connTab, { ui.connTab = it }, dense = true)
             Spacer(Modifier.weight(1f))
             Column(Modifier.padding(start = 6.dp), horizontalAlignment = Alignment.End) {
-                Text("↑ ${fmtBytes(vm.connTotalUp)}", fontSize = 11.sp, color = ex.up, maxLines = 1)
-                Text("↓ ${fmtBytes(vm.connTotalDown)}", fontSize = 11.sp, color = ex.down, maxLines = 1)
+                Text("↑ ${fmtBytes(vm.connTotalUp)}", fontSize = 11.sp, color = ex.upText, maxLines = 1)
+                Text("↓ ${fmtBytes(vm.connTotalDown)}", fontSize = 11.sp, color = ex.downText, maxLines = 1)
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -176,11 +176,11 @@ private fun ConnCard(vm: MainViewModel, c: Connection, compact: Boolean, onClick
                 )
                 Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("↑ ${fmtBytes(c.upload)}", fontSize = 12.sp, color = ex.up)
-                    if (c.uploadSpeed > 0) Text(" (${fmtSpeed(c.uploadSpeed)})", fontSize = 12.sp, color = ex.up)
+                    Text("↑ ${fmtBytes(c.upload)}", fontSize = 12.sp, color = ex.upText)
+                    if (c.uploadSpeed > 0) Text(" (${fmtSpeed(c.uploadSpeed)})", fontSize = 12.sp, color = ex.upText)
                     Spacer(Modifier.width(10.dp))
-                    Text("↓ ${fmtBytes(c.download)}", fontSize = 12.sp, color = ex.down)
-                    if (c.downloadSpeed > 0) Text(" (${fmtSpeed(c.downloadSpeed)})", fontSize = 12.sp, color = ex.down)
+                    Text("↓ ${fmtBytes(c.download)}", fontSize = 12.sp, color = ex.downText)
+                    if (c.downloadSpeed > 0) Text(" (${fmtSpeed(c.downloadSpeed)})", fontSize = 12.sp, color = ex.downText)
                     Spacer(Modifier.weight(1f))
                     val end = if (c.closedAt > 0) c.closedAt else now
                     Text(fmtDuration(end - c.startMillis), fontSize = 12.sp, color = ex.subtle)
@@ -206,7 +206,7 @@ private fun ConnDetail(vm: MainViewModel, c: Connection, onDone: () -> Unit) {
     Column(Modifier.fillMaxWidth().fillMaxHeight(0.85f).padding(horizontal = 16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(t("conn_detail"), fontSize = 20.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-            if (c.closedAt == 0L) Button({ vm.closeConn(c.id); onDone() }) { Text(t("close")) }
+            if (c.closedAt == 0L) Button({ vm.closeConn(c.id); onDone() }, colors = primaryButtonColors()) { Text(t("close")) }
         }
         Spacer(Modifier.height(10.dp))
         Card0(Modifier.fillMaxWidth().weight(1f)) {

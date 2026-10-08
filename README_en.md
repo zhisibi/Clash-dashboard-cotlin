@@ -2,7 +2,7 @@
 
 English · [简体中文](README.md)
 
-A native Android dashboard written in **Kotlin + Jetpack Compose** for the `external-controller` RESTful API of mihomo-compatible proxy cores. Look and features match Mimi Panel for HarmonyOS 1.2.0 (frosted glass, immersive light, accent colors, swipe between pages, pull to refresh, Chinese/English UI).
+A native Android dashboard written in **Kotlin + Jetpack Compose** for the `external-controller` RESTful API of mihomo-compatible proxy cores. Look and features match Mimi Panel for HarmonyOS 1.2.1 (frosted glass, immersive light, accent colors, swipe between pages, pull to refresh, Chinese/English UI).
 
 > The app **contains no proxy core** and never starts a proxy or VPN. It needs a backend that is already running (a core on your router or a LAN computer, or the external controller exposed by a proxy client on the phone).
 
@@ -10,12 +10,21 @@ A native Android dashboard written in **Kotlin + Jetpack Compose** for the `exte
 | --- | --- |
 | App name | Mimi Panel (Chinese 咪咪面板) |
 | Package | `net.zash.clashpanel` (same package and signing key as earlier versions, so it upgrades in place and keeps backends and settings) |
-| Version | 1.2.0 (versionCode 1020000) |
+| Version | 1.2.1 (versionCode 1020100) |
 | Requirements | Android 8.0+ (minSdk 26, targetSdk 35); real-time frosted blur needs Android 12+ |
 | Permissions | `android.permission.INTERNET` only |
 | UI languages | Simplified Chinese, English (Settings → Language, can follow the system) |
 
 ## Changelog
+
+### 1.2.1
+- Ports the HarmonyOS 1.2.1 color-contrast fixes (WCAG: icons/controls/large text >= 3:1, body text >= 4.5:1):
+  - **Save & Connect** and **Test Connection** in the backend form are never shown in Material's faded disabled state (38% alpha, about 2.2:1); they validate on tap instead: a missing host, a missing port or a port outside 1–65535 shows a toast, outlines the field in red and shows an ✗ message above the buttons; taps during a running test are ignored instead of greying the button out
+  - Secondary text, labels, placeholders and status colors (good / warn / bad / log info) are darker in light mode; secondary text and the error color are lighter in dark mode, log info is `#38BDF8` in dark mode
+  - The accent is split into a **text** tone (accent, >= 4.5), an **icon/control** tone (accentUi, >= 3), the original **decorative** color (accentFill: backdrop gradient, glow, swatches) and the **button fill + label** (primary / onPrimary). Tangerine, Bili Pink and Grass Green keep their vivid buttons in light mode with dark text `#1D2025`; in dark mode the fills are adjusted. Values are identical to the HarmonyOS app
+  - The soft accent background (accentSoft) is 11% / 20% instead of 14% / 24%; new upload/download text colors (↑ / ↓ text on Connections)
+  - Material 3 controls follow the new tokens: switches, radio buttons, checkboxes, sliders, progress bars and spinners, the selected bottom-bar icon, the cards-per-row filter chips, the selected node outline, the pull-to-refresh indicator, the consent "Agree" button, the close-connection button, segmented tabs and active round buttons. Material's primary is now the text tone so TextButton / OutlinedButton labels and focused field labels pass
+- New `scripts/check-contrast.py`: parses `ui/Theme.kt`, mirrors `buildPalette()` and `Glass.kt`, and checks all 7 presets in light and dark mode against pages, cards, inputs, dialogs, translucent glass cards (default opacity 0.55 over the glass backdrop and glows), the header, the bottom bar and Material controls; exits non-zero on any failure (currently 0)
 
 ### 1.2.0
 - **Renamed to Mimi Panel (咪咪面板)**: third-party brand names removed from the UI, strings and docs; the API client is now `CoreApi`. Package `net.zash.clashpanel` and the signing key are unchanged, so it installs over 1.1.x and keeps saved backends and settings
@@ -78,6 +87,8 @@ JDK 17+ and Android SDK 35:
 ```
 
 After changing UI text run `python3 scripts/gen-i18n.py`: it generates `app/src/main/java/net/zash/clashpanel/i18n/Strings.kt` and `LegalTexts.kt` from `i18n/strings_*.json` and `docs/*.md` and checks the keys. Bump `PRIVACY_VERSION` in `i18n/I18n.kt` on material policy changes so users are asked to accept again.
+
+After changing colors in `ui/Theme.kt` run `python3 scripts/check-contrast.py` (add `-v` for the worst pair per surface): it must report 0 failures.
 
 ### Signing
 

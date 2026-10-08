@@ -119,7 +119,8 @@ private fun ProxyOptionsMenu(vm: MainViewModel, open: Boolean, onDismiss: () -> 
         Text(t("cards_per_row"), Modifier.padding(horizontal = 16.dp, vertical = 6.dp), fontSize = 12.sp, color = LocalExtra.current.subtle)
         Row(Modifier.padding(horizontal = 12.dp)) {
             (1..3).forEach { n ->
-                FilterChip(vm.proxyCols == n, { vm.proxyCols = n; vm.savePrefs() }, { Text(t("n_cols", n)) }, Modifier.padding(end = 6.dp))
+                FilterChip(vm.proxyCols == n, { vm.proxyCols = n; vm.savePrefs() }, { Text(t("n_cols", n)) }, Modifier.padding(end = 6.dp),
+                    colors = FilterChipDefaults.filterChipColors(selectedContainerColor = LocalPal.current.accentSoft, selectedLabelColor = LocalPal.current.accent))
             }
         }
         HorizontalDivider()
@@ -131,7 +132,7 @@ private fun ProxyOptionsMenu(vm: MainViewModel, open: Boolean, onDismiss: () -> 
 private fun CheckItem(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     DropdownMenuItem(
         text = { Text(label) }, onClick = { onChange(!checked) },
-        trailingIcon = { Checkbox(checked, { onChange(it) }) },
+        trailingIcon = { Checkbox(checked, { onChange(it) }, colors = accentCheckboxColors()) },
     )
 }
 
@@ -197,7 +198,7 @@ private fun GroupDetail(vm: MainViewModel, g: Proxy, query: String) {
                 val p = vm.proxies[n]
                 val sel = g.now == n
                 val d = vm.delayOf(n, url)
-                val border = if (sel) ex.accent else androidx.compose.ui.graphics.Color.Transparent
+                val border = if (sel) ex.accentUi else androidx.compose.ui.graphics.Color.Transparent
                 Card0(
                     Modifier.fillMaxWidth().border(2.dp, border, RoundedCornerShape(18.dp)),
                     onClick = { if (selectable) vm.select(g, n) },
@@ -244,7 +245,7 @@ private fun ProvidersList(vm: MainViewModel, list: List<ProxyProvider>, pad: Pad
                             Text(t("provider_sub", p.vehicleType, p.proxies.size, fmtAgo(net.zash.clashpanel.data.parseIsoMillis(p.updatedAt))), fontSize = 12.sp, color = ex.subtle)
                         }
                         IconButton({ vm.healthcheck(p.name) }) {
-                            if (vm.testing["provider:${p.name}"] == true) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                            if (vm.testing["provider:${p.name}"] == true) CircularProgressIndicator(Modifier.size(18.dp), color = LocalPal.current.accentUi, strokeWidth = 2.dp)
                             else Icon(Icons.Outlined.Bolt, t("act_healthcheck"))
                         }
                         if (p.vehicleType.equals("HTTP", true)) IconButton({ vm.updateProvider(p.name) }) { Icon(Icons.Outlined.Sync, t("act_update_sub")) }
@@ -255,6 +256,7 @@ private fun ProvidersList(vm: MainViewModel, list: List<ProxyProvider>, pad: Pad
                         LinearProgressIndicator(
                             progress = { (used.toFloat() / p.subTotal).coerceIn(0f, 1f) },
                             modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                            color = ex.accentUi, trackColor = ex.chip,
                         )
                         Spacer(Modifier.height(4.dp))
                         val exp = if (p.subExpire > 0) t("sub_expire", java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date(p.subExpire * 1000))) else ""
