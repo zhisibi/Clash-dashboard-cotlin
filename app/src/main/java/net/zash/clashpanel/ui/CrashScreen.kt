@@ -2,6 +2,7 @@ package net.zash.clashpanel.ui
 
 import android.widget.Toast
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -86,7 +87,7 @@ fun CrashDetailDialog(f: File, onDismiss: () -> Unit) {
                 Spacer(Modifier.height(10.dp))
                 Box(Modifier.weight(1f).fillMaxWidth()) {
                     SelectionContainer {
-                        Text(text, Modifier.verticalScroll(rememberScrollState()).horizontalScroll(rememberScrollState()),
+                        Text(text, Modifier.bounceScroll(rememberScrollState()).bounceScroll(rememberScrollState(), Orientation.Horizontal),
                             fontFamily = FontFamily.Monospace, fontSize = 11.sp, lineHeight = 15.sp, softWrap = false)
                     }
                 }

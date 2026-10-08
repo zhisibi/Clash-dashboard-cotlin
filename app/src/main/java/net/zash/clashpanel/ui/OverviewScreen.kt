@@ -30,7 +30,7 @@ import androidx.compose.material.icons.automirrored.outlined.FormatListBulleted
 fun OverviewBody(vm: MainViewModel, top: Dp, bottom: Dp) {
     val ex = LocalExtra.current
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+        Modifier.fillMaxSize().bounceScroll(rememberScrollState(), top = false)
             .padding(start = 14.dp, end = 14.dp, top = top, bottom = bottom + 14.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {

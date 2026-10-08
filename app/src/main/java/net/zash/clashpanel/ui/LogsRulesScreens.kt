@@ -91,8 +91,9 @@ fun LogsBody(vm: MainViewModel, top: Dp, bottom: Dp) {
     if (list.isEmpty()) {
         ScrollableEmpty(top, bottom + 14.dp, if (vm.logLevel == "silent") t("log_silent") else t("log_waiting"))
     } else {
+        val state = rememberLazyListState()
         LazyColumn(
-            Modifier.fillMaxSize(),
+            Modifier.fillMaxSize().edgeBounce(state, top = false), state = state,
             contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = top, bottom = bottom + 14.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
@@ -162,10 +163,12 @@ fun RulesBody(vm: MainViewModel, top: Dp, bottom: Dp) {
     val providerMap = remember(vm.ruleProviders) { vm.ruleProviders.associateBy { it.name } }
     run {
         val pad = PaddingValues(start = 14.dp, end = 14.dp, top = top, bottom = bottom + 14.dp)
+        val rulesState = rememberLazyListState()
+        val provState = rememberLazyListState()
         if (tab == 0) {
             val list = vm.rules.filter { match(it.payload, it.type, it.proxy) }
             if (list.isEmpty()) ScrollableEmpty(top, bottom + 14.dp, t("no_data"))
-            else LazyColumn(Modifier.fillMaxSize(), contentPadding = pad, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            else LazyColumn(Modifier.fillMaxSize().edgeBounce(rulesState, top = false), state = rulesState, contentPadding = pad, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(list, key = { it.index }) { r ->
                     Card0(Modifier.fillMaxWidth(), kind = GlassKind.Row) {
                         Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
@@ -201,7 +204,7 @@ fun RulesBody(vm: MainViewModel, top: Dp, bottom: Dp) {
         } else {
             val list = vm.ruleProviders.filter { match(it.name, it.behavior) }
             if (list.isEmpty()) ScrollableEmpty(top, bottom + 14.dp, t("no_data"))
-            else LazyColumn(Modifier.fillMaxSize(), contentPadding = pad, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            else LazyColumn(Modifier.fillMaxSize().edgeBounce(provState, top = false), state = provState, contentPadding = pad, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(list, key = { it.name }) { p ->
                     Card0(Modifier.fillMaxWidth(), kind = GlassKind.Row) {
                         Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {

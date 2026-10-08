@@ -89,7 +89,7 @@ fun SettingsBody(vm: MainViewModel, top: Dp, bottom: Dp) {
     val scroll = rememberScrollState()
     LaunchedEffect(page) { scroll.scrollTo(0) }
     Column(
-        Modifier.fillMaxSize().verticalScroll(scroll).imePadding()
+        Modifier.fillMaxSize().bounceScroll(scroll).imePadding()
             .padding(start = 14.dp, end = 14.dp, top = if (page.isEmpty()) top else top - 14.dp, bottom = bottom + 14.dp),
     ) {
         when (page) {

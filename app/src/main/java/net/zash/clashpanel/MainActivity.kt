@@ -360,7 +360,7 @@ private fun ConsentScreen(vm: MainViewModel, onExit: () -> Unit) {
     val sys = WindowInsets.systemBars.asPaddingValues()
     Column(Modifier.fillMaxSize().background(p.bg)) {
         Column(
-            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
+            Modifier.weight(1f).fillMaxWidth().bounceScroll(rememberScrollState())
                 .padding(start = 24.dp, end = 24.dp, top = sys.calculateTopPadding() + 40.dp, bottom = 16.dp),
         ) {
             AppIcon(72.dp)
@@ -402,7 +402,7 @@ fun AppIcon(size: Dp) {
 private fun SetupScreen(vm: MainViewModel) {
     val p = LocalPal.current
     Box(Modifier.fillMaxSize().background(p.bg).systemBarsPadding().imePadding()) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) {
+        Column(Modifier.fillMaxSize().bounceScroll(rememberScrollState()).padding(20.dp)) {
             Spacer(Modifier.height(40.dp))
             Icon(Icons.AutoMirrored.Outlined.Send, null, Modifier.size(56.dp), tint = p.accentUi)
             Spacer(Modifier.height(16.dp))
@@ -428,7 +428,7 @@ private fun LegalView(doc: String, onClose: () -> Unit) {
             IconButton(onClose) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, null, tint = p.text) }
             Text(if (doc == "agreement") t("user_agreement") else t("privacy_policy"), fontSize = 18.sp, fontWeight = FontWeight.Medium, color = p.text)
         }
-        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = sys.calculateBottomPadding() + 24.dp)) {
+        Column(Modifier.weight(1f).fillMaxWidth().bounceScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = sys.calculateBottomPadding() + 24.dp)) {
             lines.forEach { l ->
                 when {
                     l.startsWith("# ") -> Text(l.substring(2), Modifier.padding(bottom = 6.dp), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = p.text)

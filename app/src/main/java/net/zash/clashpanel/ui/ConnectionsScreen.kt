@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -111,8 +112,9 @@ fun ConnectionsBody(vm: MainViewModel, top: Dp, bottom: Dp) {
     if (list.isEmpty()) {
         ScrollableEmpty(top, bottom + 14.dp, t("no_data"))
     } else {
+        val state = rememberLazyListState()
         LazyColumn(
-            Modifier.fillMaxSize(),
+            Modifier.fillMaxSize().edgeBounce(state, top = false), state = state,
             contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = top, bottom = bottom + 14.dp),
             verticalArrangement = Arrangement.spacedBy(if (ui.connCompact) 6.dp else 10.dp),
         ) {
@@ -211,7 +213,7 @@ private fun ConnDetail(vm: MainViewModel, c: Connection, onDone: () -> Unit) {
         Spacer(Modifier.height(10.dp))
         Card0(Modifier.fillMaxWidth().weight(1f)) {
             SelectionContainer {
-                Column(Modifier.verticalScroll(rememberScrollState()).padding(14.dp)) {
+                Column(Modifier.bounceScroll(rememberScrollState(), top = false).padding(14.dp)) {
                     rows.forEach { (k, v) ->
                         Row(Modifier.padding(vertical = 5.dp)) {
                             Text(k, Modifier.width(if (net.zash.clashpanel.i18n.I18n.isEn) 104.dp else 84.dp), fontSize = 13.sp, color = ex.subtle)

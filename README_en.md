@@ -2,7 +2,7 @@
 
 English · [简体中文](README.md)
 
-A native Android dashboard written in **Kotlin + Jetpack Compose** for the `external-controller` RESTful API of mihomo-compatible proxy cores. Look and features match Mimi Panel for HarmonyOS 1.2.1 (frosted glass, immersive light, accent colors, swipe between pages, pull to refresh, Chinese/English UI).
+A native Android dashboard written in **Kotlin + Jetpack Compose** for the `external-controller` RESTful API of mihomo-compatible proxy cores. Look and features match Mimi Panel for HarmonyOS 1.2.2 (frosted glass, immersive light, accent colors, swipe between pages, pull to refresh, Chinese/English UI).
 
 > The app **contains no proxy core** and never starts a proxy or VPN. It needs a backend that is already running (a core on your router or a LAN computer, or the external controller exposed by a proxy client on the phone).
 
@@ -10,12 +10,21 @@ A native Android dashboard written in **Kotlin + Jetpack Compose** for the `exte
 | --- | --- |
 | App name | Mimi Panel (Chinese 咪咪面板) |
 | Package | `net.zash.clashpanel` (same package and signing key as earlier versions, so it upgrades in place and keeps backends and settings) |
-| Version | 1.2.1 (versionCode 1020100) |
+| Version | 1.2.2 (versionCode 1020200) |
 | Requirements | Android 8.0+ (minSdk 26, targetSdk 35); real-time frosted blur needs Android 12+ |
 | Permissions | `android.permission.INTERNET` only |
 | UI languages | Simplified Chinese, English (Settings → Language, can follow the system) |
 
 ## Changelog
+
+### 1.2.2
+- Ports the HarmonyOS 1.2.2 boundary-feedback fix (scrolling to an edge must give feedback):
+  - **Page swiping**: swiping past the first page (Overview) or the last page (Settings) gives edge feedback: the system stretch on Android 12+ and the edge glow on Android 8–11 (the default `HorizontalPager` overscroll, nothing disables it)
+  - **Bounce even when the content fits**: Compose only runs its overscroll effect when a container can scroll, so short content gave no feedback at the top or bottom. New `ui/Bounce.kt`: while a container can scroll the system stretch / glow is unchanged; while it can't, a spring rubber band moves the content (more resistance the further you pull) and springs back on release or after a fling, the same on Android 8–15
+  - Covers the Settings list and every sub-page (Language, Backend, Panel, Proxies, Connections, Crash logs, About), the consent screen, the first-run backend setup, the privacy policy / user agreement, the proxy-group sheet, the connection-details sheet, crash log text (vertical and horizontal), Overview, and the Proxies / Providers, Connections, Logs and Rules / Rule providers lists
+  - Empty, loading and error states on Proxies, Connections, Logs and Rules bounce too and still support pull-to-refresh
+  - On pages with pull-to-refresh the top edge stays pull-to-refresh and the bottom edge bounces; in bottom sheets the top edge still drags the sheet down and the bottom edge bounces
+  - The bounce is not counted as scrolling, so it does not trigger the bottom-bar auto-collapse, and the frosted header and bar keep blurring
 
 ### 1.2.1
 - Ports the HarmonyOS 1.2.1 color-contrast fixes (WCAG: icons/controls/large text >= 3:1, body text >= 4.5:1):

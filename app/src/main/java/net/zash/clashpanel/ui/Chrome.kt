@@ -129,10 +129,13 @@ fun PageFrame(vm: MainViewModel, page: String?, topInset: Dp, content: @Composab
     ) { content() }
 }
 
-/** Empty / loading state that can still be pulled (verticalScroll so the pull gesture reaches the refresh box). */
+/**
+ * Empty / loading / error state that can still be pulled (scrollable so the pull gesture reaches the refresh box);
+ * bounces at the bottom edge (1.2.2), the top edge is pull-to-refresh.
+ */
 @Composable
 fun ScrollableEmpty(top: Dp, bottom: Dp, text: String) {
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 14.dp, end = 14.dp, top = top, bottom = bottom)) {
+    Column(Modifier.fillMaxSize().bounceScroll(rememberScrollState(), top = false).padding(start = 14.dp, end = 14.dp, top = top, bottom = bottom)) {
         EmptyCard(text)
     }
 }

@@ -65,12 +65,14 @@ fun ProxiesBody(vm: MainViewModel, top: Dp, bottom: Dp) {
         if (groups.isEmpty()) {
             ScrollableEmpty(top, bottom + 14.dp, if (vm.proxiesLoading) t("loading") else t("no_data"))
         } else {
+            val state = rememberLazyGridState()
             LazyVerticalGrid(
                 columns = GridCells.Fixed(vm.proxyCols.coerceIn(1, 3)),
+                state = state,
                 contentPadding = pad,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().edgeBounce(state, top = false),
             ) {
                 items(groups, key = { it.name }) { g -> GroupCard(vm, g) { ui.openGroup = g.name } }
             }
@@ -188,8 +190,12 @@ private fun GroupDetail(vm: MainViewModel, g: Proxy, query: String) {
             RoundIconButton(Icons.Outlined.Bolt, active = testing) { vm.testGroup(g) }
         }
         Spacer(Modifier.height(12.dp))
+        // in a bottom sheet: the top edge drags the sheet, the bottom edge bounces (1.2.2)
+        val state = rememberLazyGridState()
         LazyVerticalGrid(
             columns = GridCells.Adaptive(160.dp),
+            state = state,
+            modifier = Modifier.edgeBounce(state, top = false),
             contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = 32.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -229,11 +235,13 @@ private fun GroupDetail(vm: MainViewModel, g: Proxy, query: String) {
 @Composable
 private fun ProvidersList(vm: MainViewModel, list: List<ProxyProvider>, pad: PaddingValues) {
     val ex = LocalExtra.current
+    val state = rememberLazyGridState()
     LazyVerticalGrid(
         columns = GridCells.Fixed(1),
+        state = state,
         contentPadding = pad,
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().edgeBounce(state, top = false),
     ) {
         items(list, key = { it.name }) { p ->
             var expanded by remember { mutableStateOf(false) }
