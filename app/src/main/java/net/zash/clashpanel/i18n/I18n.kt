@@ -71,7 +71,7 @@ fun t(key: String, vararg args: Any?): String {
     return s
 }
 
-const val LEGAL_DEVELOPER = "zhisibi"
+const val LEGAL_DEVELOPER = "张世博"
 const val LEGAL_CONTACT = "https://github.com/zhisibi"
 /** Privacy policy version: bump on material changes so users are asked to accept again. */
-const val PRIVACY_VERSION = 1
+const val PRIVACY_VERSION = 2

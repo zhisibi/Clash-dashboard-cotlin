@@ -1,9 +1,9 @@
 # Mimi Panel Privacy Policy (Android)
 
-Last updated: October 8, 2026
-Effective: October 8, 2026
+Last updated: October 10, 2026
+Effective: October 10, 2026
 
-Mimi Panel ("the App") is provided by the developer zhisibi ("we" or "us"). The App is a control panel that runs locally on your device and connects to the external-controller API of a mihomo-compatible proxy core that you deploy yourself. We take the protection of your personal information seriously; please read this policy carefully before using the App.
+Mimi Panel ("the App") is provided by the developer Zhang Shibo ("we" or "us"). The App is a control panel that runs locally on your device and connects to the external-controller API of a mihomo-compatible proxy core that you deploy yourself. We take the protection of your personal information seriously; please read this policy carefully before using the App.
 
 The Chinese version of this policy (docs/privacy.md) is the governing version; this English version is provided for convenience.
 
@@ -26,10 +26,11 @@ Uninstalling the App deletes all of the above. You can also delete backends, rem
 
 ## 3. Network access
 
-- The App requests the network permission (android.permission.INTERNET), the only permission it requests. Network requests go only to the backend addresses you configure, to read and change the proxy core's status, configuration, connections, logs and rules.
+- The App requests the network permission (android.permission.INTERNET), the only permission it requests. Except as listed below, network requests go only to the backend addresses you configure, to read and change the proxy core's status, configuration, connections, logs and rules.
 - Node latency tests are performed by your backend: the App only passes the test URL you set (default https://www.gstatic.com/generate_204) to the backend as a parameter and never visits that URL itself.
 - If your proxy configuration sets icon URLs for proxy groups, the App loads those icon images from those URLs.
-- The App sends no data to us or to any other server.
+- Update check: only when you tap Settings > About > Version, the App asks GitHub (api.github.com) for the version number of this project's latest release; if there is a newer one and you choose Update, it opens the GitHub release page in the system browser. The request carries no personal information or device identifier; GitHub may log access details such as your IP address under its own privacy policy.
+- Apart from the above, the App sends no data to us or to any other server.
 
 ## 4. Use of device capabilities
 
@@ -52,4 +53,4 @@ If this policy changes, we will update it in the App and on this page, and ask f
 
 ## 8. Contact us
 
-If you have any questions about this policy, contact us via the developer's page: https://github.com/zhisibi
+If you have any questions about this policy, contact us by the developer's email: zhisibi@163.com

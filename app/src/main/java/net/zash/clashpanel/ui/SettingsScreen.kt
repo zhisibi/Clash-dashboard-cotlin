@@ -154,7 +154,11 @@ private fun AboutPage(vm: MainViewModel) {
     var withdraw by remember { mutableStateOf(false) }
     Group(null) {
         RowItem(t("app_name_label"), t("app_name"))
-        RowItem(t("version"), "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+        // 1.2.7: tap to check the repo's latest release
+        RowItem(t("version"), "${BuildConfig.VERSION_NAME} · " + if (vm.updateChecking) t("update_checking") else t("version_check_desc"), onClick = { vm.checkUpdate() }) {
+            if (vm.updateChecking) CircularProgressIndicator(Modifier.size(18.dp), color = ex.subtle, strokeWidth = 2.dp)
+            else Icon(Icons.Outlined.ChevronRight, null, tint = ex.subtle)
+        }
         RowItem(t("developer"), "$LEGAL_DEVELOPER · $LEGAL_CONTACT")
         RowItem(t("compat_api"), t("compat_api_desc"))
     }
@@ -162,6 +166,21 @@ private fun AboutPage(vm: MainViewModel) {
         RowItem(t("privacy_policy"), onClick = { vm.legalDoc = "privacy" }) { Icon(Icons.Outlined.ChevronRight, null, tint = ex.subtle) }
         RowItem(t("user_agreement"), onClick = { vm.legalDoc = "agreement" }) { Icon(Icons.Outlined.ChevronRight, null, tint = ex.subtle) }
         RowItem(t("withdraw"), t("withdraw_desc"), onClick = { withdraw = true }) { Icon(Icons.Outlined.ChevronRight, null, tint = ex.subtle) }
+    }
+    vm.updateFound?.let { r ->
+        val ctx = LocalContext.current
+        AlertDialog(
+            onDismissRequest = { vm.updateFound = null },
+            title = { Text(t("update_title")) }, text = { Text(t("update_msg", r.version, BuildConfig.VERSION_NAME)) },
+            confirmButton = {
+                TextButton({
+                    vm.updateFound = null
+                    runCatching { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(r.url))) }
+                        .onFailure { vm.toast(t("update_failed")) }
+                }) { Text(t("update_go"), color = LocalPal.current.accent) }
+            },
+            dismissButton = { TextButton({ vm.updateFound = null }) { Text(t("update_later")) } },
+        )
     }
     if (withdraw) {
         AlertDialog(

@@ -218,13 +218,18 @@ private fun MainChrome(vm: MainViewModel, ms: MainState) {
     val scope = rememberCoroutineScope()
     BackHandler(vm.tab == 5 && vm.settingsPage.isNotEmpty() && vm.legalDoc.isEmpty()) { vm.settingsPage = ""; vm.expandNav() }
     Box(Modifier.fillMaxSize()) {
-        BoxWithConstraints(Modifier.fillMaxWidth().clickable(remember { MutableInteractionSource() }, null) {}) {
+        // 1.2.7: the touch blocker sits on each page's own header, not on this container. The container is as tall as
+        // the tallest neighbour header (Connections has three rows), so it used to swallow taps on the top of the
+        // Proxies page's first row of cards.
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
             val w = constraints.maxWidth
             val cur = pager.currentPage
             for (i in (cur - 1).coerceAtLeast(0)..(cur + 1).coerceAtMost(5)) {
                 key(i) {
                     Box(Modifier.fillMaxWidth().offset { IntOffset(((i - pager.currentPage - pager.currentPageOffsetFraction) * w).roundToInt(), 0) }) {
-                        PageHeader(vm, i) { ms.headerH[i] = it }
+                        Box(Modifier.clickable(remember { MutableInteractionSource() }, null) {}) {
+                            PageHeader(vm, i) { ms.headerH[i] = it }
+                        }
                     }
                 }
             }
@@ -315,8 +320,8 @@ private fun BottomBar(vm: MainViewModel, pager: PagerState, sweepKey: Int, onSel
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center,
                             ) {
+                                // 1.2.7: icon and label sit tight together (no spacer, label without font padding)
                                 Icon(tab.icon, t(tab.title), Modifier.size(22.dp), tint = if (on) p.accentUi else p.text)
-                                Spacer(Modifier.height(2.dp))
                                 AutoSizeLabel(t(tab.title), on, if (on) p.accent else p.text)
                             }
                         }
@@ -349,6 +354,14 @@ private fun AutoSizeLabel(text: String, bold: Boolean, color: Color) {
         text, color = color, fontSize = size.sp, maxLines = 1, softWrap = false,
         fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
         overflow = if (size <= 8f) TextOverflow.Ellipsis else TextOverflow.Clip,
+        lineHeight = (size + 1f).sp,
+        style = androidx.compose.ui.text.TextStyle(
+            platformStyle = androidx.compose.ui.text.PlatformTextStyle(includeFontPadding = false),
+            lineHeightStyle = androidx.compose.ui.text.style.LineHeightStyle(
+                androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center,
+                androidx.compose.ui.text.style.LineHeightStyle.Trim.Both,
+            ),
+        ),
         onTextLayout = { if (it.hasVisualOverflow && size > 8f) size -= 0.5f },
     )
 }

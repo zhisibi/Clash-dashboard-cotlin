@@ -170,6 +170,23 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun toast(s: String) { toasts.tryEmit(s) }
 
+    // 1.2.7: About > Version update check
+    var updateChecking by mutableStateOf(false); private set
+    var updateFound by mutableStateOf<Updater.Release?>(null)
+    fun checkUpdate() {
+        if (updateChecking) return
+        updateChecking = true
+        viewModelScope.launch {
+            try {
+                val r = Updater.latest()
+                if (Updater.cmp(r.version, BuildConfig.VERSION_NAME) > 0) updateFound = r
+                else toast(t("update_latest", BuildConfig.VERSION_NAME))
+            } catch (e: Exception) {
+                toast(t("update_failed"))
+            } finally { updateChecking = false }
+        }
+    }
+
     fun errMsg(e: Throwable): String = when (e) {
         is ApiException -> if (e.code == 401) t("err_401") else e.message ?: "HTTP ${e.code}"
         is java.net.ConnectException -> t("err_connect")

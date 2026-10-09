@@ -4,10 +4,10 @@ package net.zash.clashpanel.i18n
 internal val PRIVACY_ZH: List<String> = listOf(
     "# 咪咪面板隐私政策（Android 版）",
     "",
-    "更新日期：2026 年 10 月 8 日",
-    "生效日期：2026 年 10 月 8 日",
+    "更新日期：2026 年 10 月 10 日",
+    "生效日期：2026 年 10 月 10 日",
     "",
-    "咪咪面板（以下简称“本应用”）由开发者 zhisibi（以下简称“我们”）提供。本应用是一个本地运行的管理面板，用于连接并管理您自行部署、与 mihomo 兼容的代理内核所提供的外部控制器（external-controller）接口。我们非常重视您的个人信息保护，请您在使用本应用前仔细阅读本政策。",
+    "咪咪面板（以下简称“本应用”）由开发者张世博（以下简称“我们”）提供。本应用是一个本地运行的管理面板，用于连接并管理您自行部署、与 mihomo 兼容的代理内核所提供的外部控制器（external-controller）接口。我们非常重视您的个人信息保护，请您在使用本应用前仔细阅读本政策。",
     "",
     "## 一、我们不收集您的个人信息",
     "",
@@ -28,10 +28,11 @@ internal val PRIVACY_ZH: List<String> = listOf(
     "",
     "## 三、网络访问",
     "",
-    "- 本应用申请了网络权限（android.permission.INTERNET，这也是本应用申请的唯一权限），网络请求只发往您自己配置的后端地址，用于读取和修改代理内核的状态、配置、连接、日志与规则。",
+    "- 本应用申请了网络权限（android.permission.INTERNET，这也是本应用申请的唯一权限），除下文所列情形外，网络请求只发往您自己配置的后端地址，用于读取和修改代理内核的状态、配置、连接、日志与规则。",
     "- 节点延迟测试由您的后端执行：本应用只把您设置的测速地址（默认 https://www.gstatic.com/generate_204）作为参数发送给后端，本应用自身不访问该地址。",
     "- 如果您的代理配置中为代理组设置了图标网址，本应用会按该网址加载图标图片。",
-    "- 本应用不会向我们或其他任何服务器发送数据。",
+    "- 检查更新：仅在您点击“设置 → 关于 → 版本”时，本应用会访问 GitHub（api.github.com）查询本项目最新发布的版本号；若有新版本且您选择“去更新”，会用系统浏览器打开 GitHub 发布页。该请求不携带任何个人信息或设备标识，GitHub 可能按其自身隐私政策记录您的 IP 地址等访问信息。",
+    "- 除上述情形外，本应用不会向我们或其他任何服务器发送数据。",
     "",
     "## 四、设备能力的使用",
     "",
@@ -54,16 +55,16 @@ internal val PRIVACY_ZH: List<String> = listOf(
     "",
     "## 八、联系我们",
     "",
-    "如对本政策有任何疑问，请通过开发者主页联系我们：https://github.com/zhisibi"
+    "如对本政策有任何疑问，请通过开发者邮箱联系我们：zhisibi@163.com"
 )
 
 internal val AGREEMENT_ZH: List<String> = listOf(
     "# 咪咪面板用户协议",
     "",
-    "更新日期：2026 年 10 月 8 日",
-    "生效日期：2026 年 10 月 8 日",
+    "更新日期：2026 年 10 月 10 日",
+    "生效日期：2026 年 10 月 10 日",
     "",
-    "欢迎使用咪咪面板（以下简称“本应用”）。本应用由开发者 zhisibi（以下简称“我们”）提供。请您在使用前仔细阅读本协议，您点击“同意”或开始使用本应用，即表示您已阅读并同意本协议及《咪咪面板隐私政策》。",
+    "欢迎使用咪咪面板（以下简称“本应用”）。本应用由开发者张世博（以下简称“我们”）提供。请您在使用前仔细阅读本协议，您点击“同意”或开始使用本应用，即表示您已阅读并同意本协议及《咪咪面板隐私政策》。",
     "",
     "## 一、服务内容",
     "",
@@ -96,16 +97,16 @@ internal val AGREEMENT_ZH: List<String> = listOf(
     "",
     "## 七、联系我们",
     "",
-    "如对本协议有任何疑问，请通过开发者主页联系我们：https://github.com/zhisibi"
+    "如对本协议有任何疑问，请通过开发者邮箱联系我们：zhisibi@163.com"
 )
 
 internal val PRIVACY_EN: List<String> = listOf(
     "# Mimi Panel Privacy Policy (Android)",
     "",
-    "Last updated: October 8, 2026",
-    "Effective: October 8, 2026",
+    "Last updated: October 10, 2026",
+    "Effective: October 10, 2026",
     "",
-    "Mimi Panel (\"the App\") is provided by the developer zhisibi (\"we\" or \"us\"). The App is a control panel that runs locally on your device and connects to the external-controller API of a mihomo-compatible proxy core that you deploy yourself. We take the protection of your personal information seriously; please read this policy carefully before using the App.",
+    "Mimi Panel (\"the App\") is provided by the developer Zhang Shibo (\"we\" or \"us\"). The App is a control panel that runs locally on your device and connects to the external-controller API of a mihomo-compatible proxy core that you deploy yourself. We take the protection of your personal information seriously; please read this policy carefully before using the App.",
     "",
     "The Chinese version of this policy (docs/privacy.md) is the governing version; this English version is provided for convenience.",
     "",
@@ -128,10 +129,11 @@ internal val PRIVACY_EN: List<String> = listOf(
     "",
     "## 3. Network access",
     "",
-    "- The App requests the network permission (android.permission.INTERNET), the only permission it requests. Network requests go only to the backend addresses you configure, to read and change the proxy core's status, configuration, connections, logs and rules.",
+    "- The App requests the network permission (android.permission.INTERNET), the only permission it requests. Except as listed below, network requests go only to the backend addresses you configure, to read and change the proxy core's status, configuration, connections, logs and rules.",
     "- Node latency tests are performed by your backend: the App only passes the test URL you set (default https://www.gstatic.com/generate_204) to the backend as a parameter and never visits that URL itself.",
     "- If your proxy configuration sets icon URLs for proxy groups, the App loads those icon images from those URLs.",
-    "- The App sends no data to us or to any other server.",
+    "- Update check: only when you tap Settings > About > Version, the App asks GitHub (api.github.com) for the version number of this project's latest release; if there is a newer one and you choose Update, it opens the GitHub release page in the system browser. The request carries no personal information or device identifier; GitHub may log access details such as your IP address under its own privacy policy.",
+    "- Apart from the above, the App sends no data to us or to any other server.",
     "",
     "## 4. Use of device capabilities",
     "",
@@ -154,16 +156,16 @@ internal val PRIVACY_EN: List<String> = listOf(
     "",
     "## 8. Contact us",
     "",
-    "If you have any questions about this policy, contact us via the developer's page: https://github.com/zhisibi"
+    "If you have any questions about this policy, contact us by the developer's email: zhisibi@163.com"
 )
 
 internal val AGREEMENT_EN: List<String> = listOf(
     "# Mimi Panel User Agreement",
     "",
-    "Last updated: October 8, 2026",
-    "Effective: October 8, 2026",
+    "Last updated: October 10, 2026",
+    "Effective: October 10, 2026",
     "",
-    "Welcome to Mimi Panel (\"the App\"), provided by the developer zhisibi (\"we\" or \"us\"). Please read this agreement carefully before using the App. By tapping \"Agree\" or using the App, you confirm that you have read and accept this agreement and the Mimi Panel Privacy Policy.",
+    "Welcome to Mimi Panel (\"the App\"), provided by the developer Zhang Shibo (\"we\" or \"us\"). Please read this agreement carefully before using the App. By tapping \"Agree\" or using the App, you confirm that you have read and accept this agreement and the Mimi Panel Privacy Policy.",
     "",
     "The Chinese version of this agreement (docs/agreement.md) is the governing version; this English version is provided for convenience.",
     "",
@@ -198,5 +200,5 @@ internal val AGREEMENT_EN: List<String> = listOf(
     "",
     "## 7. Contact us",
     "",
-    "If you have any questions about this agreement, contact us via the developer's page: https://github.com/zhisibi"
+    "If you have any questions about this agreement, contact us by the developer's email: zhisibi@163.com"
 )

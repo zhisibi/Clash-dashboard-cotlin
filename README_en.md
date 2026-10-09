@@ -2,7 +2,7 @@
 
 English · [简体中文](README.md)
 
-A native Android dashboard written in **Kotlin + Jetpack Compose** for the `external-controller` RESTful API of mihomo-compatible proxy cores. Look and features match Mimi Panel for HarmonyOS 1.2.6 (frosted glass, immersive light, accent colors, swipe between pages, pull to refresh, Chinese/English UI).
+A native Android dashboard written in **Kotlin + Jetpack Compose** for the `external-controller` RESTful API of mihomo-compatible proxy cores. Look and features match Mimi Panel for HarmonyOS 1.2.7 (frosted glass, immersive light, accent colors, swipe between pages, pull to refresh, Chinese/English UI).
 
 > The app **contains no proxy core** and never starts a proxy or VPN. It needs a backend that is already running (a core on your router or a LAN computer, or the external controller exposed by a proxy client on the phone).
 
@@ -10,12 +10,18 @@ A native Android dashboard written in **Kotlin + Jetpack Compose** for the `exte
 | --- | --- |
 | App name | Mimi Panel (Chinese 咪咪面板) |
 | Package | `net.zash.clashpanel` (same package and signing key as earlier versions, so it upgrades in place and keeps backends and settings) |
-| Version | 1.2.6 (versionCode 1020600) |
+| Version | 1.2.7 (versionCode 1020700) |
 | Requirements | Android 8.0+ (minSdk 26, targetSdk 35); real-time frosted blur needs Android 12+ |
 | Permissions | `android.permission.INTERNET` only |
 | UI languages | Simplified Chinese, English (Settings → Language, can follow the system) |
 
 ## Changelog
+
+### 1.2.7
+- New (matches HarmonyOS 1.2.7): tap Settings > About > Version to check the GitHub repo's latest release; when a newer one is out, a dialog offers to open the download page.
+- Privacy policy and user agreement match HarmonyOS: developer Zhang Shibo, contact by email zhisibi@163.com, and the update check's network access is covered; privacy policy version 2 (you'll be asked to agree again after upgrading).
+- Fix: taps on the top part of the first row of cards on the Proxies page did nothing (the header touch blocker took the height of the tallest neighbouring header and covered the cards).
+- Bottom bar icons and labels now sit closer together.
 
 ### 1.2.6
 - Matches HarmonyOS 1.2.6: Every latency-test button on the Proxies page now animates on press and keeps spinning until the test ends: the header "test all" and the group sheet's test button turn into a spinner, and while a whole group or provider is tested, each node's latency pill spins too.
