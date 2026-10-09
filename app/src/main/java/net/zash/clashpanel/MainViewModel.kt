@@ -526,6 +526,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         finally { nodeTesting.remove(name) }
     }
 
+    /** 1.2.6: any proxy-group latency test running (drives the header test-all spinner) */
+    val anyGroupTesting: Boolean get() = testing.any { it.value && !it.key.startsWith("provider:") }
+
     fun testAllGroups() = groups.filter { it.name != "GLOBAL" }.forEach { testGroup(it) }
 
     fun unfix(g: Proxy) = launchSafe(t("act_unfix")) { api?.unfixProxy(g.name); refreshProxies() }

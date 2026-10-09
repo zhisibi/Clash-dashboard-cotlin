@@ -20,6 +20,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -97,8 +100,12 @@ fun LatencyBadge(delay: Int, low: Int, medium: Int, testing: Boolean = false, on
         delay <= medium -> ex.warn
         else -> ex.bad
     }
-    val m = Modifier.defaultMinSize(minWidth = 40.dp).height(24.dp).clip(RoundedCornerShape(50)).background(ex.chip)
-        .let { if (onClick != null) it.clickable(onClick = onClick) else it }
+    val src = remember { MutableInteractionSource() }
+    val pressed by src.collectIsPressedAsState()
+    val sc by animateFloatAsState(if (pressed) 0.9f else 1f, tween(120), label = "press")
+    val m = Modifier.defaultMinSize(minWidth = 40.dp).height(24.dp).graphicsLayer { scaleX = sc; scaleY = sc }
+        .clip(RoundedCornerShape(50)).background(ex.chip)
+        .let { if (onClick != null) it.clickable(interactionSource = src, indication = LocalIndication.current, onClick = onClick) else it }
         .padding(horizontal = 10.dp)
     Box(m, contentAlignment = Alignment.Center) {
         if (testing) {
@@ -142,15 +149,20 @@ fun SearchBox(
 }
 
 @Composable
-fun RoundIconButton(icon: ImageVector, active: Boolean = false, tint: Color? = null, dense: Boolean = false, onClick: () -> Unit) {
+fun RoundIconButton(icon: ImageVector, active: Boolean = false, tint: Color? = null, dense: Boolean = false, busy: Boolean = false, onClick: () -> Unit) {
     val ex = LocalPal.current
+    // 1.2.6: press shrinks the button; while busy (latency test running) the icon gives way to a spinner
+    val src = remember { MutableInteractionSource() }
+    val pressed by src.collectIsPressedAsState()
+    val sc by animateFloatAsState(if (pressed) 0.88f else 1f, tween(120), label = "press")
     Box(
-        Modifier.size(if (dense) 34.dp else 44.dp).clip(CircleShape)
+        Modifier.size(if (dense) 34.dp else 44.dp).graphicsLayer { scaleX = sc; scaleY = sc }.clip(CircleShape)
             .background(if (active) ex.primary else ex.chip)
-            .clickable(onClick = onClick),
+            .clickable(interactionSource = src, indication = LocalIndication.current, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, null, Modifier.size(if (dense) 18.dp else 20.dp), tint = tint ?: if (active) ex.onPrimary else ex.text)
+        if (busy) CircularProgressIndicator(Modifier.size(if (dense) 18.dp else 20.dp), color = if (active) ex.onPrimary else ex.text, strokeWidth = 2.dp)
+        else Icon(icon, null, Modifier.size(if (dense) 18.dp else 20.dp), tint = tint ?: if (active) ex.onPrimary else ex.text)
     }
 }
 

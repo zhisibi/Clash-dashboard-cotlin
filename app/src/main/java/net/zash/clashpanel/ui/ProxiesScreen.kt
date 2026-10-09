@@ -45,7 +45,7 @@ fun ProxiesHeader(vm: MainViewModel) {
                 ProxyOptionsMenu(vm, menu) { menu = false }
             }
             Spacer(Modifier.width(6.dp))
-            if (ui.proxyTab == 0 || vm.providers.isEmpty()) RoundIconButton(Icons.Outlined.Bolt, dense = true) { vm.testAllGroups() }
+            if (ui.proxyTab == 0 || vm.providers.isEmpty()) RoundIconButton(Icons.Outlined.Bolt, active = vm.anyGroupTesting, dense = true, busy = vm.anyGroupTesting) { vm.testAllGroups() }
             else RoundIconButton(Icons.Outlined.Sync, dense = true) { vm.updateAllProviders() }
         }
     }
@@ -188,7 +188,7 @@ private fun GroupDetail(vm: MainViewModel, g: Proxy, query: String) {
             if (g.fixed != null && !g.type.equals("Selector", true)) {
                 TextButton({ vm.unfix(g) }) { Text(t("act_unfix")) }
             }
-            RoundIconButton(Icons.Outlined.Bolt, active = testing) { vm.testGroup(g) }
+            RoundIconButton(Icons.Outlined.Bolt, active = testing, busy = testing) { vm.testGroup(g) }
         }
         Spacer(Modifier.height(12.dp))
         // in a bottom sheet: the top edge drags the sheet, the bottom edge bounces (1.2.2)
@@ -224,7 +224,7 @@ private fun GroupDetail(vm: MainViewModel, g: Proxy, query: String) {
                                 if (p?.udp == true) Tag("UDP")
                                 if (p?.isGroup == true) Tag(p.now ?: "", ex.subtle, Modifier.weight(1f, fill = false).widthIn(min = 24.dp))
                             }
-                            LatencyBadge(d, vm.lowLatency, vm.mediumLatency, vm.nodeTesting[n] == true) {
+                            LatencyBadge(d, vm.lowLatency, vm.mediumLatency, vm.nodeTesting[n] == true || vm.testing[n] == true || testing) {
                                 if (p?.isGroup == true) vm.testGroup(p) else vm.testNode(n, url)
                             }
                         }
@@ -279,7 +279,7 @@ private fun ProvidersList(vm: MainViewModel, list: List<ProxyProvider>, pad: Pad
                             Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text(n.name, Modifier.weight(1f), fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 Tag(n.type); Spacer(Modifier.width(6.dp))
-                                LatencyBadge(vm.delayOf(n.name, p.testUrl), vm.lowLatency, vm.mediumLatency, vm.nodeTesting[n.name] == true) {
+                                LatencyBadge(vm.delayOf(n.name, p.testUrl), vm.lowLatency, vm.mediumLatency, vm.nodeTesting[n.name] == true || vm.testing["provider:${p.name}"] == true) {
                                     vm.testNode(n.name, p.testUrl ?: vm.testUrl)
                                 }
                             }
