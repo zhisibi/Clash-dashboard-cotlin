@@ -226,11 +226,11 @@ fun EmptyCard(text: String = t("no_data")) {
 }
 
 @Composable
-fun Tag(text: String, color: Color? = null) {
+fun Tag(text: String, color: Color? = null, modifier: Modifier = Modifier) {
     val ex = LocalPal.current
     Text(
-        text, Modifier.clip(RoundedCornerShape(6.dp)).background(ex.chip).padding(horizontal = 6.dp, vertical = 1.dp),
-        fontSize = 11.sp, color = color ?: ex.subtle, maxLines = 1,
+        text, modifier.clip(RoundedCornerShape(6.dp)).background(ex.chip).padding(horizontal = 6.dp, vertical = 1.dp),
+        fontSize = 11.sp, color = color ?: ex.subtle, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis,
     )
 }
 

@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -216,10 +217,12 @@ private fun GroupDetail(vm: MainViewModel, g: Proxy, query: String) {
                         }
                         Spacer(Modifier.height(8.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Tag(p?.type ?: "?")
+                            // 1.2.3: chips take the width left of the latency pill; type and a group's current node
+                            // shrink and end in an ellipsis (same as HarmonyOS 1.2.3)
+                            Row(Modifier.weight(1f).padding(end = 6.dp).clipToBounds(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Tag(p?.type ?: "?", modifier = Modifier.weight(1f, fill = false).widthIn(min = 24.dp))
                                 if (p?.udp == true) Tag("UDP")
-                                if (p?.isGroup == true) Tag(p.now ?: "", ex.subtle)
+                                if (p?.isGroup == true) Tag(p.now ?: "", ex.subtle, Modifier.weight(1f, fill = false).widthIn(min = 24.dp))
                             }
                             LatencyBadge(d, vm.lowLatency, vm.mediumLatency, vm.nodeTesting[n] == true) {
                                 if (p?.isGroup == true) vm.testGroup(p) else vm.testNode(n, url)

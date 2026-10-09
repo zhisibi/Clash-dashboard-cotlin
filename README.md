@@ -2,7 +2,7 @@
 
 [English](README_en.md) · 简体中文
 
-用 **Kotlin + Jetpack Compose** 编写的原生安卓管理面板，适用于与 mihomo 兼容的代理内核所提供的 `external-controller` RESTful API。界面与功能和 HarmonyOS 版咪咪面板 1.2.2 保持一致（毛玻璃、沉浸光感、主题色、左右滑动切页、下拉刷新、中英文界面）。
+用 **Kotlin + Jetpack Compose** 编写的原生安卓管理面板，适用于与 mihomo 兼容的代理内核所提供的 `external-controller` RESTful API。界面与功能和 HarmonyOS 版咪咪面板 1.2.3 保持一致（毛玻璃、沉浸光感、主题色、左右滑动切页、下拉刷新、中英文界面）。
 
 > App 本身**不包含代理内核**，也不会启动代理服务或 VPN，需要配合已在运行的后端使用（例如路由器或局域网电脑上的内核，或手机上的代理客户端开放的外部控制器）。
 
@@ -10,12 +10,15 @@
 | --- | --- |
 | 应用名 | 咪咪面板（英文 Mimi Panel） |
 | 包名 | `net.zash.clashpanel`（沿用旧版包名与签名，可直接覆盖升级，后端与设置保留） |
-| 版本 | 1.2.2（versionCode 1020200） |
+| 版本 | 1.2.3（versionCode 1020300） |
 | 系统要求 | Android 8.0 及以上（minSdk 26，targetSdk 35）；实时毛玻璃模糊需要 Android 12+ |
 | 权限 | 只有 `android.permission.INTERNET` |
 | 界面语言 | 简体中文、English（设置 → 语言，可跟随系统） |
 
 ## 更新日志
+
+### 1.2.3
+- 与 HarmonyOS 1.2.3 保持一致：节点卡片的标签区占满延迟胶囊左侧的宽度，协议类型和代理组当前节点等过长的名字末尾显示省略号，不再被硬截断。
 
 ### 1.2.2
 - 移植 HarmonyOS 1.2.2 的边界回弹修复（滚动到边界要有反馈）：
