@@ -322,6 +322,8 @@
  "app_name_label": "App name",
  "app_name": "Mimi Panel",
  "developer": "Developer",
+ "feedback_group": "Feedback group",
+ "feedback_group_desc": "{0} · Tap to copy",
  "compat_api": "Compatible API",
  "compat_api_desc": "The RESTful external-controller API of mihomo-compatible cores. The app contains no proxy core and provides no proxy service.",
  "legal": "Legal",

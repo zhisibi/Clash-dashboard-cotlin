@@ -147,6 +147,8 @@ private fun LanguagePage(vm: MainViewModel) {
 }
 
 // ---------------- about ----------------
+private const val FEEDBACK_GROUP = "1127250124"
+
 @Composable
 private fun AboutPage(vm: MainViewModel) {
     val ex = LocalExtra.current
@@ -160,6 +162,12 @@ private fun AboutPage(vm: MainViewModel) {
             else Icon(Icons.Outlined.ChevronRight, null, tint = ex.subtle)
         }
         RowItem(t("developer"), "$LEGAL_DEVELOPER · $LEGAL_CONTACT")
+        // 1.2.9: feedback group, tap to copy the number
+        RowItem(t("feedback_group"), t("feedback_group_desc", FEEDBACK_GROUP), onClick = {
+            val cm = act?.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+            cm?.setPrimaryClip(android.content.ClipData.newPlainText("feedback", FEEDBACK_GROUP))
+            vm.toast(t("copied"))
+        })
         RowItem(t("compat_api"), t("compat_api_desc"))
     }
     Group(t("legal")) {

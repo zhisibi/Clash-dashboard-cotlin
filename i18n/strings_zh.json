@@ -322,6 +322,8 @@
  "app_name_label": "应用名称",
  "app_name": "咪咪面板",
  "developer": "开发者",
+ "feedback_group": "问题反馈群",
+ "feedback_group_desc": "{0} · 点击复制",
  "compat_api": "兼容接口",
  "compat_api_desc": "与 mihomo 兼容的外部控制器（external-controller）RESTful API。本应用不包含代理内核，也不提供代理服务。",
  "legal": "协议",
