@@ -245,7 +245,10 @@ private fun MainChrome(vm: MainViewModel, ms: MainState) {
 private fun PageHeader(vm: MainViewModel, i: Int, onHeight: (Dp) -> Unit) {
     when (i) {
         0 -> GlassHeader(hPad = 20.dp, onHeight = onHeight) {
-            HeaderStatus(t("overview"), vm.connState, vm.active?.let { "${it.host}:${it.port}" } ?: t("not_connected"), vm.version)
+            // 1.2.10: with a server label, show only the status and the label (no "Overview", no core version)
+            val label = vm.active?.label?.trim().orEmpty()
+            if (label.isNotEmpty()) HeaderStatus("", vm.connState, label)
+            else HeaderStatus(t("overview"), vm.connState, vm.active?.let { "${it.host}:${it.port}" } ?: t("not_connected"), vm.version)
         }
         1 -> GlassHeader(onHeight = onHeight) { ProxiesHeader(vm) }
         2 -> GlassHeader(onHeight = onHeight) { ConnectionsHeader(vm) }

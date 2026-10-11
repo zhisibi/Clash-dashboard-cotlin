@@ -23,8 +23,8 @@ android {
         applicationId = "net.zash.clashpanel"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1020900
-        versionName = "1.2.9"
+        versionCode = 1021000
+        versionName = "1.2.10"
     }
 
     signingConfigs {

@@ -251,15 +251,19 @@ fun Tag(text: String, color: Color? = null, modifier: Modifier = Modifier) {
 fun HeaderStatus(title: String, connState: ConnState, address: String, tag: String = "", modifier: Modifier = Modifier) {
     val ex = LocalPal.current
     Row(modifier.fillMaxWidth().height(30.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(title, fontSize = 18.sp, fontWeight = FontWeight.Medium, color = ex.text, maxLines = 1, overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.widthIn(max = 200.dp))
-        Spacer(Modifier.width(10.dp))
-        Box(Modifier.width(1.dp).height(16.dp).background(ex.outline))
-        Spacer(Modifier.width(10.dp))
+        // 1.2.10: with no title (overview with a server label), the status dot + label alone fill the row
+        if (title.isNotEmpty()) {
+            Text(title, fontSize = 18.sp, fontWeight = FontWeight.Medium, color = ex.text, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.widthIn(max = 200.dp))
+            Spacer(Modifier.width(10.dp))
+            Box(Modifier.width(1.dp).height(16.dp).background(ex.outline))
+            Spacer(Modifier.width(10.dp))
+        }
         val dot = when (connState) { ConnState.Connected -> ex.good; ConnState.Connecting -> ex.warn; ConnState.Failed -> ex.bad; else -> ex.subtle }
         Box(Modifier.size(8.dp).clip(CircleShape).background(dot))
         Spacer(Modifier.width(8.dp))
-        Text(address, Modifier.weight(1f), fontSize = 13.sp, color = ex.subtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        if (title.isNotEmpty()) Text(address, Modifier.weight(1f), fontSize = 13.sp, color = ex.subtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        else Text(address, Modifier.weight(1f), fontSize = 18.sp, fontWeight = FontWeight.Medium, color = ex.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
         if (tag.isNotBlank()) Tag(tag)
     }
 }
