@@ -175,6 +175,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var updateFound by mutableStateOf<Updater.Release?>(null)
     fun checkUpdate() {
         if (updateChecking) return
+        // AppGallery build: updates come only from AppGallery, so open the app's AppGallery page.
+        if (BuildConfig.STORE == "huawei") { openAppGallery(); return }
         updateChecking = true
         viewModelScope.launch {
             try {
@@ -184,6 +186,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             } catch (e: Exception) {
                 toast(t("update_failed"))
             } finally { updateChecking = false }
+        }
+    }
+
+    private fun openAppGallery() {
+        val app = getApplication<Application>()
+        val i = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("appmarket://details?id=" + app.packageName))
+            .setPackage("com.huawei.appmarket").addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        try { app.startActivity(i) } catch (e: Exception) {
+            try {
+                app.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,
+                    android.net.Uri.parse("https://appgallery.huawei.com/app/C119299757")).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+            } catch (e2: Exception) { toast(t("update_failed")) }
         }
     }
 

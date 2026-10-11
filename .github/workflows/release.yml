@@ -57,14 +57,14 @@ jobs:
             keytool -list -keystore "$KEYSTORE_FILE" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > ks.log 2>&1 \
               || { echo "::error::签名校验失败：$(grep -v '^$' ks.log | head -c 300 | tr '\n' ' ')"; exit 1; }
           fi
-          if ! ./gradlew assembleRelease --no-daemon --stacktrace > build.log 2>&1; then
+          if ! ./gradlew assembleGithubRelease --no-daemon --stacktrace > build.log 2>&1; then
             grep -E "^e: |error:|FAILURE|What went wrong|Caused by|> " build.log | head -40 | while IFS= read -r l; do echo "::error::$l"; done
             tail -60 build.log
             exit 1
           fi
           VERSION=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts)
           mkdir -p dist
-          cp app/build/outputs/apk/release/app-release.apk "dist/MimiPanel-Android-$VERSION.apk"
+          cp app/build/outputs/apk/github/release/app-github-release.apk "dist/MimiPanel-Android-$VERSION.apk"
           {
             echo "## 咪咪面板 Android 版 $VERSION"
             echo

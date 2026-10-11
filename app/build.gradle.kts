@@ -36,6 +36,21 @@ android {
         }
     }
 
+    // Distribution channels: github = sideloaded APK from GitHub Releases (original package, checks GitHub for updates);
+    // huawei = Huawei AppGallery listing (own package, updates come from AppGallery).
+    flavorDimensions += "store"
+    productFlavors {
+        create("github") {
+            dimension = "store"
+            buildConfigField("String", "STORE", "\"github\"")
+        }
+        create("huawei") {
+            dimension = "store"
+            applicationId = "com.mimipanel.andriod"
+            buildConfigField("String", "STORE", "\"huawei\"")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
