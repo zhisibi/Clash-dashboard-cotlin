@@ -9,7 +9,7 @@ A native Android dashboard written in **Kotlin + Jetpack Compose** for the `exte
 | Item | Value |
 | --- | --- |
 | App name | Mimi Panel (Chinese 咪咪面板) |
-| Package | `net.zash.clashpanel` (same package and signing key as earlier versions, so it upgrades in place and keeps backends and settings) |
+| Package | `com.mimipanel.andriod` (same for the GitHub and Huawei AppGallery builds; 1.2.10 and earlier used `net.zash.clashpanel`, so uninstall the old app first) |
 | Version | 1.2.10 (versionCode 1021000) |
 | Requirements | Android 8.0+ (minSdk 26, targetSdk 35); real-time frosted blur needs Android 12+ |
 | Permissions | `android.permission.INTERNET` only |
@@ -151,7 +151,7 @@ Repository secrets (Settings → Secrets and variables → Actions; surrounding 
 - The edge highlight is approximated with a gradient stroke (HarmonyOS colors each side separately); the accent glow is a colored shadow (colors show on Android 9+)
 - The header blocks touches (so taps don't fall through to list items underneath), so swiping on the header does not change pages; swipe on the page content (the HarmonyOS header is inside the page and swipes with it)
 - The launcher name follows the system language, not the in-app language (the app UI does switch)
-- The package stays `net.zash.clashpanel` so existing users can upgrade (the HarmonyOS app moved to `com.zhisibi.mimipanel` for its store listing); the local settings file is still named `clash_panel`
+- The application id is `com.mimipanel.andriod` (the code namespace is still `net.zash.clashpanel`); the local settings file is still named `clash_panel`
 - Wallpaper blur needs Android 12+
 
 ## Stack

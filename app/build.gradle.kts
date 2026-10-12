@@ -20,7 +20,7 @@ android {
     buildToolsVersion = "35.0.0"
 
     defaultConfig {
-        applicationId = "net.zash.clashpanel"
+        applicationId = "com.mimipanel.andriod"
         minSdk = 26
         targetSdk = 35
         versionCode = 1021000
@@ -36,8 +36,8 @@ android {
         }
     }
 
-    // Distribution channels: github = sideloaded APK from GitHub Releases (original package, checks GitHub for updates);
-    // huawei = Huawei AppGallery listing (own package, updates come from AppGallery).
+    // Distribution channels: github = sideloaded APK from GitHub Releases (checks GitHub for updates);
+    // huawei = Huawei AppGallery listing (updates come from AppGallery). Both use package com.mimipanel.andriod.
     flavorDimensions += "store"
     productFlavors {
         create("github") {
@@ -46,7 +46,6 @@ android {
         }
         create("huawei") {
             dimension = "store"
-            applicationId = "com.mimipanel.andriod"
             buildConfigField("String", "STORE", "\"huawei\"")
         }
     }

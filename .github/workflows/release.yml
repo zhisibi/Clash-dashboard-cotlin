@@ -72,7 +72,7 @@ jobs:
             echo
             echo "## 安装说明"
             echo
-            echo "- \`MimiPanel-Android-$VERSION.apk\`：Android 8.0+，包名 \`net.zash.clashpanel\`，与之前的版本使用同一签名，可直接覆盖升级，后端与设置会保留。"
+            echo "- \`MimiPanel-Android-$VERSION.apk\`：Android 8.0+，包名 \`com.mimipanel.andriod\`。"
             echo
             echo "SHA-256："
             echo '```'

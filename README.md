@@ -9,7 +9,7 @@
 | 项目 | 值 |
 | --- | --- |
 | 应用名 | 咪咪面板（英文 Mimi Panel） |
-| 包名 | `net.zash.clashpanel`（沿用旧版包名与签名，可直接覆盖升级，后端与设置保留） |
+| 包名 | `com.mimipanel.andriod`（GitHub 版与华为应用市场版相同；1.2.10 及以前为 `net.zash.clashpanel`，需卸载旧版后安装） |
 | 版本 | 1.2.10（versionCode 1021000） |
 | 系统要求 | Android 8.0 及以上（minSdk 26，targetSdk 35）；实时毛玻璃模糊需要 Android 12+ |
 | 权限 | 只有 `android.permission.INTERNET` |
@@ -172,7 +172,7 @@ app/src/main/java/net/zash/clashpanel/
 - 光感边缘高光用渐变描边近似（HarmonyOS 为四边分别取色），主题色光晕用彩色阴影（Android 9+ 才显示颜色）
 - 顶栏会拦截触摸（避免点穿到下方的列表项），因此在顶栏上左右滑动不会翻页，需要在页面内容上滑动（HarmonyOS 版顶栏位于页面内，可以随页面滑动）
 - 桌面应用名随系统语言显示，不随应用内语言切换（应用内界面会切换）
-- 包名保持 `net.zash.clashpanel` 以便老用户覆盖升级（HarmonyOS 版为上架改成了 `com.zhisibi.mimipanel`）；本地设置文件名仍为 `clash_panel`
+- 应用包名为 `com.mimipanel.andriod`（代码命名空间仍为 `net.zash.clashpanel`）；本地设置文件名仍为 `clash_panel`
 - 壁纸模糊需要 Android 12+
 
 ## 技术栈
