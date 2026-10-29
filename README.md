@@ -2,7 +2,7 @@
 
 [English](README_en.md) · 简体中文
 
-用 **Kotlin + Jetpack Compose** 编写的原生安卓管理面板，适用于与 mihomo 兼容的代理内核所提供的 `external-controller` RESTful API。界面与功能和 HarmonyOS 版咪咪面板 1.3.4 保持一致（毛玻璃、沉浸光感、主题色、左右滑动切页、下拉刷新、中英文界面）。
+用 **Kotlin + Jetpack Compose** 编写的原生安卓管理面板，适用于与 mihomo 兼容的代理内核所提供的 `external-controller` RESTful API。界面与功能和 HarmonyOS 版咪咪面板 1.3.5 保持一致（毛玻璃、沉浸光感、主题色、左右滑动切页、下拉刷新、中英文界面）。
 
 > App 本身**不包含代理内核**，也不会启动代理服务或 VPN，需要配合已在运行的后端使用（例如路由器或局域网电脑上的内核，或手机上的代理客户端开放的外部控制器）。
 
@@ -10,12 +10,15 @@
 | --- | --- |
 | 应用名 | 咪咪面板（英文 Mimi Panel） |
 | 包名 | `com.mimipanel.andriod`（GitHub 版与华为应用市场版相同；1.2.10 及以前为 `net.zash.clashpanel`，需卸载旧版后安装） |
-| 版本 | 1.3.4（versionCode 1034000） |
+| 版本 | 1.3.5（versionCode 1035000） |
 | 系统要求 | Android 8.0 及以上（minSdk 26，targetSdk 35）；实时毛玻璃模糊需要 Android 12+ |
 | 权限 | 只有 `android.permission.INTERNET` |
 | 界面语言 | 简体中文、English（设置 → 语言，可跟随系统） |
 
 ## 更新日志
+
+### 1.3.5
+- 优化（与 HarmonyOS 1.3.5 保持一致）：新装默认值调整——默认主题色改为红色（华为红）；毛玻璃默认开启（自定义材质、模糊强度 20、卡片不透明度 20%）；沉浸光感默认开启；导航栏沉浸光感默认开启；列表页模糊默认关闭。已安装用户保存过的设置不受影响。
 
 ### 1.3.4
 - 优化（与 HarmonyOS 1.3.4 保持一致）：首页实时速度与内存两张折线图卡片改为完全等高——速度卡的图例移入标题行、两张图的高度统一为 104 dp，卡片内边距略收；两张卡都比之前更矮。

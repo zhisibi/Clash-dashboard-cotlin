@@ -2,7 +2,7 @@
 
 English · [简体中文](README.md)
 
-A native Android dashboard written in **Kotlin + Jetpack Compose** for the `external-controller` RESTful API of mihomo-compatible proxy cores. Look and features match Mimi Panel for HarmonyOS 1.3.4 (frosted glass, immersive light, accent colors, swipe between pages, pull to refresh, Chinese/English UI).
+A native Android dashboard written in **Kotlin + Jetpack Compose** for the `external-controller` RESTful API of mihomo-compatible proxy cores. Look and features match Mimi Panel for HarmonyOS 1.3.5 (frosted glass, immersive light, accent colors, swipe between pages, pull to refresh, Chinese/English UI).
 
 > The app **contains no proxy core** and never starts a proxy or VPN. It needs a backend that is already running (a core on your router or a LAN computer, or the external controller exposed by a proxy client on the phone).
 
@@ -10,12 +10,15 @@ A native Android dashboard written in **Kotlin + Jetpack Compose** for the `exte
 | --- | --- |
 | App name | Mimi Panel (Chinese 咪咪面板) |
 | Package | `com.mimipanel.andriod` (same for the GitHub and Huawei AppGallery builds; 1.2.10 and earlier used `net.zash.clashpanel`, so uninstall the old app first) |
-| Version | 1.3.4 (versionCode 1034000) |
+| Version | 1.3.5 (versionCode 1035000) |
 | Requirements | Android 8.0+ (minSdk 26, targetSdk 35); real-time frosted blur needs Android 12+ |
 | Permissions | `android.permission.INTERNET` only |
 | UI languages | Simplified Chinese, English (Settings → Language, can follow the system) |
 
 ## Changelog
+
+### 1.3.5
+- Improved (matches HarmonyOS 1.3.5): New fresh-install defaults - the default accent is now red ("Huawei red"); frosted glass is on by default (custom material, blur strength 20, card opacity 20%); immersive light is on by default; the nav bar immersive light stays on by default; list-row blur stays off by default. Settings saved by existing installs are unaffected.
 
 ### 1.3.4
 - Improved (matches HarmonyOS 1.3.4): The live-speed and memory line-chart cards on the Overview page are now exactly the same height - the speed card's legends moved into its title row, both charts are 104 dp high, and card padding is slightly tighter; both cards are shorter than before.

@@ -52,13 +52,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var wallpaper by mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null); private set
 
     // ----- appearance (1.1.3 – 1.1.5 of the HarmonyOS app) -----
-    var accent by mutableStateOf(net.zash.clashpanel.ui.findAccent(prefs.str("accent", "blue")).key); private set
-    var glassOn by mutableStateOf(prefs.bool("glass_on", false))
+    // 1.3.5: fresh-install defaults - accent red ("Huawei red"), glass on (custom material, blur 20,
+    // card opacity 0.20), light on, list rows stay unblurred; existing installs keep their stored values
+    var accent by mutableStateOf(net.zash.clashpanel.ui.findAccent(prefs.str("accent", "red")).key); private set
+    var glassOn by mutableStateOf(prefs.bool("glass_on", true))
     var glassStyle by mutableStateOf(prefs.str("glass_style", "custom").let { if (it in listOf("custom", "thin", "regular", "thick")) it else "custom" })
-    var glassBlur by mutableIntStateOf(prefs.int("glass_blur", 45))
-    var glassAlpha by mutableFloatStateOf(prefs.float("glass_alpha", 0.55f))
+    var glassBlur by mutableIntStateOf(prefs.int("glass_blur", 20))
+    var glassAlpha by mutableFloatStateOf(prefs.float("glass_alpha", 0.20f))
     var glassRows by mutableStateOf(prefs.bool("glass_rows", false))
-    var lightOn by mutableStateOf(prefs.bool("light_on", false)); private set
+    var lightOn by mutableStateOf(prefs.bool("light_on", true)); private set
     var lightIntensity by mutableFloatStateOf(prefs.float("light_intensity", 0.6f))
     var lightTilt by mutableStateOf(prefs.bool("light_tilt", false)); private set
     var lightGlow by mutableStateOf(prefs.bool("light_glow", true))
