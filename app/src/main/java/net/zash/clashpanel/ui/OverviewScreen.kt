@@ -58,28 +58,29 @@ fun OverviewBody(vm: MainViewModel, top: Dp, bottom: Dp) {
                 BigStat(t("memory_usage"), fmtBytes(vm.memory), Icons.Outlined.Memory, null, Modifier.weight(1f))
             }
 
-            // traffic chart
+            // traffic chart (1.3.4: same height as the memory card, both smaller - legends moved into the
+            // title row and both charts are 104 dp high, so the two cards match exactly)
             Card0(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp)) {
+                Column(Modifier.padding(14.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(t("live_speed"), fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+                        Legend(ex.up, t("upload")); Spacer(Modifier.width(14.dp)); Legend(ex.down, t("download")); Spacer(Modifier.width(14.dp))
                         Text(t("peak", fmtSpeed(vm.trafficHistory.maxOfOrNull { maxOf(it.up, it.down) } ?: 0)), fontSize = 12.sp, color = ex.subtle)
                     }
-                    Spacer(Modifier.height(10.dp))
-                    LineChart(listOf(vm.trafficHistory.map { it.up.toFloat() } to ex.up, vm.trafficHistory.map { it.down.toFloat() } to ex.down), Modifier.fillMaxWidth().height(160.dp))
-                    Row(Modifier.padding(top = 8.dp)) { Legend(ex.up, t("upload")); Spacer(Modifier.width(14.dp)); Legend(ex.down, t("download")) }
+                    Spacer(Modifier.height(8.dp))
+                    LineChart(listOf(vm.trafficHistory.map { it.up.toFloat() } to ex.up, vm.trafficHistory.map { it.down.toFloat() } to ex.down), Modifier.fillMaxWidth().height(104.dp))
                 }
             }
 
-            // memory chart
+            // memory chart (1.3.4: same structure and height as the traffic card)
             Card0(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp)) {
+                Column(Modifier.padding(14.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(t("memory"), fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
                         Text(fmtBytes(vm.memory), fontSize = 12.sp, color = ex.subtle)
                     }
-                    Spacer(Modifier.height(10.dp))
-                    LineChart(listOf(vm.memoryHistory.map { it.toFloat() } to ex.accentUi), Modifier.fillMaxWidth().height(110.dp))
+                    Spacer(Modifier.height(8.dp))
+                    LineChart(listOf(vm.memoryHistory.map { it.toFloat() } to ex.accentUi), Modifier.fillMaxWidth().height(104.dp))
                 }
             }
 
