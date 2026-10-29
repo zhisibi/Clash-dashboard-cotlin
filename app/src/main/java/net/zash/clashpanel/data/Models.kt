@@ -22,6 +22,29 @@ data class Backend(
     val display: String get() = label.ifBlank { "$host:$port" }
 }
 
+/**
+ * Host characters that would break out of the URL authority in baseUrl (1.3.3, security): a userinfo '@'
+ * (http://127.0.0.1@evil.com sends the Bearer secret to evil.com), '/', '?', '#' or whitespace. Hosts are
+ * IP literals or domain names only.
+ */
+fun hostHasBadChars(h: String): Boolean = h.any { it == '@' || it == '/' || it == '?' || it == '#' || it.isWhitespace() }
+
+/** The path prefix may contain '/' segments but no query/fragment markers and no '..' traversal. */
+fun pathHasBadChars(p: String): Boolean =
+    p.any { it == '?' || it == '#' || it.isWhitespace() } || p.split('/').any { it == ".." }
+
+/** Loopback / private / link-local host (for the plain-HTTP warning in the backend form). */
+fun isLocalHost(h: String): Boolean {
+    val host = h.trim().removeSurrounding("[", "]").lowercase()
+    if (host == "localhost" || host.endsWith(".local") || host == "::1") return true
+    val parts = host.split('.')
+    if (parts.size == 4 && parts.all { it.toIntOrNull() != null }) {
+        val a = parts[0].toInt(); val b = parts[1].toInt()
+        return a == 127 || a == 10 || (a == 172 && b in 16..31) || (a == 192 && b == 168) || (a == 169 && b == 254)
+    }
+    return false
+}
+
 data class DelayHistory(val time: String, val delay: Int)
 
 data class Proxy(

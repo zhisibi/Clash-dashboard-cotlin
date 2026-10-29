@@ -47,6 +47,9 @@ import net.zash.clashpanel.BuildConfig
 import net.zash.clashpanel.ConnState
 import net.zash.clashpanel.MainViewModel
 import net.zash.clashpanel.data.Backend
+import net.zash.clashpanel.data.hostHasBadChars
+import net.zash.clashpanel.data.isLocalHost
+import net.zash.clashpanel.data.pathHasBadChars
 import net.zash.clashpanel.i18n.I18n
 import net.zash.clashpanel.i18n.LEGAL_CONTACT
 import net.zash.clashpanel.i18n.LEGAL_DEVELOPER
@@ -425,8 +428,12 @@ fun BackendForm(vm: MainViewModel, initial: Backend, onSaved: (() -> Unit)? = nu
         val pn = port.trim().toIntOrNull()
         val (key, msg) = when {
             host.isBlank() -> "host" to t("err_host_required")
+            // 1.3.3 (security): a host with '@'/'?'/'#' would break out of the URL authority and could send
+            // this backend's secret to a different server; the path prefix gets the same treatment.
+            hostHasBadChars(host.trim()) -> "host" to t("err_host_invalid")
             port.isBlank() -> "port" to t("err_port_required")
             pn == null || pn < 1 || pn > 65535 -> "port" to t("err_port_invalid")
+            pathHasBadChars(path.trim()) -> "path" to t("err_path_invalid")
             else -> "" to ""
         }
         errField = key
@@ -443,7 +450,12 @@ fun BackendForm(vm: MainViewModel, initial: Backend, onSaved: (() -> Unit)? = nu
             OutlinedTextField(port, { port = it.filter { c -> c.isDigit() }.take(5); clearErr("port") }, Modifier.width(110.dp), label = { Text(t("f_port"), maxLines = 1) }, singleLine = true,
                 isError = errField == "port", keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
         }
-        OutlinedTextField(path, { path = it }, Modifier.fillMaxWidth(), label = { Text(t("f_path"), maxLines = 1) }, placeholder = { Text(t("optional"), maxLines = 1) }, singleLine = true)
+        OutlinedTextField(path, { path = it; clearErr("path") }, Modifier.fillMaxWidth(), label = { Text(t("f_path"), maxLines = 1) }, placeholder = { Text(t("optional"), maxLines = 1) }, singleLine = true,
+            isError = errField == "path")
+        // 1.3.3: plain HTTP to a public address sends the secret unencrypted - say so in the form
+        if (protocol == "http" && host.isNotBlank() && !isLocalHost(host)) {
+            Text(t("warn_cleartext"), fontSize = 13.sp, color = ex.warn)
+        }
         OutlinedTextField(
             secret, { secret = it }, Modifier.fillMaxWidth(), label = { Text(t("f_secret"), maxLines = 1) }, placeholder = { Text(t("optional"), maxLines = 1) }, singleLine = true,
             visualTransformation = if (showSecret) VisualTransformation.None else PasswordVisualTransformation(),

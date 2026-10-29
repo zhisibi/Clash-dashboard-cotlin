@@ -183,11 +183,11 @@ class CoreApi(val backend: Backend) {
     }
 
     fun ws(path: String): Flow<String> = callbackFlow {
-        var u = wsUrl(path)
-        if (backend.secret.isNotEmpty()) {
-            u += (if (u.contains('?')) "&" else "?") + "token=" + enc(backend.secret)
-        }
-        val req = Request.Builder().url(u.replaceFirst("ws", "http")).build()
+        // 1.3.3 (security): the secret goes in the Authorization header like every REST call; it used to be
+        // appended as a ?token= query parameter, which leaks into server / proxy logs.
+        val rb = Request.Builder().url(wsUrl(path).replaceFirst("ws", "http"))
+        if (backend.secret.isNotEmpty()) rb.header("Authorization", "Bearer ${backend.secret}")
+        val req = rb.build()
         val socket = wsClient.newWebSocket(req, object : WebSocketListener() {
             override fun onMessage(webSocket: WebSocket, text: String) { trySend(text) }
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) { close(t) }
@@ -209,6 +209,11 @@ class CoreApi(val backend: Backend) {
             .pingInterval(20, TimeUnit.SECONDS)
             .build()
 
-        fun validate(b: Backend): Boolean = runCatching { b.baseUrl.toHttpUrl() }.isSuccess
+        /** Shape check (1.3.3): host / port / path must not be able to break out of the URL authority. */
+        fun validate(b: Backend): Boolean {
+            val pn = b.port.trim().toIntOrNull()
+            return b.host.isNotBlank() && !hostHasBadChars(b.host.trim()) && !pathHasBadChars(b.secondaryPath.trim()) &&
+                pn != null && pn in 1..65535 && runCatching { b.baseUrl.toHttpUrl() }.isSuccess
+        }
     }
 }

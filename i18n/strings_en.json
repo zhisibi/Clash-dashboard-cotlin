@@ -359,5 +359,8 @@
  "review_rate": "Rate it",
  "rate_app": "Rate Mimi Panel",
  "rate_app_desc": "Leave a review on AppGallery",
- "rate_open_failed": "Couldn't open the store - please search for Mimi Panel in AppGallery"
+ "rate_open_failed": "Couldn't open the store - please search for Mimi Panel in AppGallery",
+ "err_host_invalid": "Host must be an IP or domain name, without @ / ? # or spaces",
+ "err_path_invalid": "Path prefix must not contain ? # or ..",
+ "warn_cleartext": "This public address uses plain HTTP: the secret travels unencrypted. Prefer HTTPS, or use it only on trusted networks"
 }

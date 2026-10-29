@@ -359,5 +359,8 @@
  "review_rate": "去评价",
  "rate_app": "给咪咪面板评价",
  "rate_app_desc": "去华为应用市场留个评价",
- "rate_open_failed": "没能打开应用市场，请在应用市场搜索「咪咪面板」"
+ "rate_open_failed": "没能打开应用市场，请在应用市场搜索「咪咪面板」",
+ "err_host_invalid": "地址只能填 IP 或域名，不能带 @、/、?、# 或空格",
+ "err_path_invalid": "路径前缀不能带 ?、# 或 ..",
+ "warn_cleartext": "当前用 HTTP 明文连接公网地址，密钥会明文传输；建议改用 HTTPS，或只在可信网络内使用"
 }
