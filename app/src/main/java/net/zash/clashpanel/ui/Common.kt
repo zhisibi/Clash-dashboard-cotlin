@@ -234,7 +234,13 @@ fun SectionTitle(text: String, modifier: Modifier = Modifier) {
 
 @Composable
 fun EmptyCard(text: String = t("no_data")) {
-    Card0(Modifier.fillMaxWidth()) { Text(text, Modifier.padding(18.dp), fontSize = 16.sp, color = LocalPal.current.text) }
+    // 1.3.0: empty states fade/rise in with the global motion setting
+    val motionOn = LocalMotion.current
+    var shown by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { shown = true }
+    androidx.compose.animation.AnimatedVisibility(shown, enter = Motion.revealEnter(motionOn)) {
+        Card0(Modifier.fillMaxWidth()) { Text(text, Modifier.padding(18.dp), fontSize = 16.sp, color = LocalPal.current.text) }
+    }
 }
 
 @Composable

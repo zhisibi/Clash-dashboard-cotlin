@@ -67,6 +67,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var lightDeg by mutableIntStateOf(330)
     var autoHideNav by mutableStateOf(prefs.bool("auto_hide_nav", true)); private set
     var navCollapsed by mutableStateOf(false); private set
+    // 1.3.0: nav bar immersive light (bar never collapses while on) + global transition animations switch
+    var navLight by mutableStateOf(prefs.bool("nav_light", true)); private set
+    var motion by mutableStateOf(prefs.bool("motion", true))
 
     // ----- navigation -----
     var tab by mutableIntStateOf(0)
@@ -126,6 +129,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private var logJob: Job? = null
 
     init {
+        reviewInit()
         I18n.init(prefs.str("lang", "system"))
         ui.connSort = prefs.connSort; ui.connDesc = prefs.connSortDesc
         // No network requests before the privacy policy / user agreement are accepted
@@ -189,16 +193,103 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun openAppGallery() {
+    private fun openAppGallery() { openStoreListing("update_failed") }
+
+    /** Opens this app's AppGallery page (market intent, web fallback). Toasts [failKey] and returns false when both fail. */
+    fun openStoreListing(failKey: String): Boolean {
         val app = getApplication<Application>()
         val i = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("appmarket://details?id=" + app.packageName))
             .setPackage("com.huawei.appmarket").addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-        try { app.startActivity(i) } catch (e: Exception) {
+        try { app.startActivity(i); return true } catch (e: Exception) {
             try {
                 app.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,
                     android.net.Uri.parse("https://appgallery.huawei.com/app/C119299757")).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
-            } catch (e2: Exception) { toast(t("update_failed")) }
+                return true
+            } catch (e2: Exception) { toast(t(failKey)); return false }
         }
+    }
+
+    // ================= gentle review prompt (1.3.0, same spec as the HarmonyOS app) =================
+    // State lives only in SharedPreferences (keys review.*) and never leaves the device.
+    private val review = ReviewData()
+    var reviewShow by mutableStateOf(false); private set
+
+    private fun reviewLoad() {
+        review.firstSeen = prefs.long("review.firstSeen", 0)
+        review.launches = prefs.int("review.launches", 0)
+        review.successes = prefs.int("review.successes", 0)
+        review.shown = prefs.int("review.shown", 0)
+        review.lastShown = prefs.long("review.lastShown", 0)
+        review.snoozeUntil = prefs.long("review.snoozeUntil", 0)
+        review.life = prefs.str("review.life", "pending").let { if (it == "rated" || it == "never") it else "pending" }
+    }
+
+    private fun reviewSave() {
+        prefs.put("review.firstSeen", review.firstSeen)
+        prefs.put("review.launches", review.launches)
+        prefs.put("review.successes", review.successes)
+        prefs.put("review.shown", review.shown)
+        prefs.put("review.lastShown", review.lastShown)
+        prefs.put("review.snoozeUntil", review.snoozeUntil)
+        prefs.put("review.life", review.life)
+    }
+
+    /** Once per process (VM init): loads the state and counts one launch. */
+    private fun reviewInit() {
+        reviewLoad()
+        reviewRecordLaunch(review, System.currentTimeMillis())
+        reviewSave()
+        android.util.Log.i("Review", "init: launches=${review.launches} successes=${review.successes} shown=${review.shown} life=${review.life}")
+    }
+
+    /** A successful connection: count it, then evaluate once the UI has settled (2 s). */
+    private fun onBackendConnected() {
+        reviewRecordSuccess(review)
+        reviewSave()
+        android.util.Log.i("Review", "backend success counted: ${review.successes}")
+        viewModelScope.launch { delay(2000); considerReview(false) }
+    }
+
+    /**
+     * Evaluates whether the soft card may show now; when it may, the display is counted and saved immediately
+     * (counted at display: a killed process cannot prompt twice). Never before consent / with no backend.
+     */
+    fun considerReview(busy: Boolean) {
+        if (reviewShow || !privacyAgreed || backends.isEmpty()) return
+        val now = System.currentTimeMillis()
+        if (!reviewShouldShow(review, now, busy)) {
+            android.util.Log.i("Review", "consider blocked: " + reviewBlockers(review, now, busy).joinToString(","))
+            return
+        }
+        reviewRecordShown(review, now)
+        reviewSave()
+        reviewShow = true
+        android.util.Log.i("Review", "card shown (${review.shown})")
+    }
+
+    /** "Rate": state saved first (automatic prompts off for good), then the listing opens. */
+    fun reviewRate() {
+        reviewChooseRate(review); reviewSave(); reviewShow = false
+        android.util.Log.i("Review", "user chose rate")
+        openStoreListing("rate_open_failed")
+    }
+
+    /** "Later" (and the card's close button): snooze 60 days. */
+    fun reviewLater() {
+        reviewChooseLater(review, System.currentTimeMillis()); reviewSave(); reviewShow = false
+        android.util.Log.i("Review", "user chose later")
+    }
+
+    /** The feedback entry in the card body: same snooze as "Later". */
+    fun reviewFeedback() {
+        reviewChooseLater(review, System.currentTimeMillis()); reviewSave(); reviewShow = false
+        android.util.Log.i("Review", "user chose feedback")
+    }
+
+    /** "Don't remind me": automatic prompts off for good. */
+    fun reviewNever() {
+        reviewChooseNever(review); reviewSave(); reviewShow = false
+        android.util.Log.i("Review", "user chose never")
     }
 
     fun errMsg(e: Throwable): String = when (e) {
@@ -268,8 +359,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setLight(on: Boolean) { lightOn = on; if (!on) lightDeg = 330; savePrefs() }
     fun setLightTiltOn(on: Boolean) { lightTilt = on; if (!on) lightDeg = 330; savePrefs() }
     fun setAutoHide(on: Boolean) { autoHideNav = on; savePrefs(); if (!on) expandNav() }
+    /** 1.3.0: immersive light on -> the bar un-collapses and stays (collapseNav / NavScrollConnection check navLight). */
+    fun setNavLightOn(on: Boolean) { navLight = on; savePrefs(); if (on) expandNav() }
     fun expandNav() { if (navCollapsed) navCollapsed = false }
-    fun collapseNav() { if (autoHideNav && !navCollapsed) navCollapsed = true }
+    fun collapseNav() { if (autoHideNav && !navLight && !navCollapsed) navCollapsed = true }
 
     fun disconnect() {
         stopStreams()
@@ -293,6 +386,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 if (api !== a) return@launch
                 version = v; isMeta = meta || v.contains("meta", true) || v.startsWith("v1.1") || v.startsWith("alpha")
                 connState = ConnState.Connected
+                onBackendConnected()
                 startStreams(a)
                 refreshAll()
             } catch (e: CancellationException) { throw e } catch (e: Throwable) {
@@ -621,6 +715,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         prefs.put("glass_alpha", glassAlpha); prefs.put("glass_rows", glassRows)
         prefs.put("light_on", lightOn); prefs.put("light_intensity", lightIntensity); prefs.put("light_tilt", lightTilt)
         prefs.put("light_glow", lightGlow); prefs.put("light_sweep", lightSweep); prefs.put("auto_hide_nav", autoHideNav)
+        prefs.put("nav_light", navLight); prefs.put("motion", motion)
     }
 
     fun setConnSort(s: String, desc: Boolean) { ui.connSort = s; ui.connDesc = desc; prefs.connSort = s; prefs.connSortDesc = desc }

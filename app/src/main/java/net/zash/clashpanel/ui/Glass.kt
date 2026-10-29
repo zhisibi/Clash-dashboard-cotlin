@@ -60,6 +60,8 @@ data class GlassCfg(
     val glow: Boolean = true,
     /** Light direction: degrees clockwise from the top of the screen */
     val lightDeg: Int = 330,
+    /** 1.3.0: nav bar immersive light - the bar alone gets the light treatment (sheen, rims, glow), page light aside */
+    val barLight: Boolean = false,
 )
 
 val LocalGlass = compositionLocalOf { GlassCfg() }
@@ -142,8 +144,9 @@ fun Modifier.glass(kind: GlassKind, shape: Shape, tint: Color? = null, border: B
         kind == GlassKind.Row || kind == GlassKind.Plain -> c.rows
         else -> true
     }
-    val I = c.intensity.coerceIn(0f, 1f)
-    val light = c.lightOn && I > 0f
+    val barLight = kind == GlassKind.Bar && c.barLight
+    val I = (if (barLight) max(c.intensity, 0.6f) else c.intensity).coerceIn(0f, 1f)
+    val light = (c.lightOn || barLight) && I > 0f
     val density = LocalDensity.current
     val cardAlpha = p.card.alpha
 

@@ -2,7 +2,7 @@
 
 English · [简体中文](README.md)
 
-A native Android dashboard written in **Kotlin + Jetpack Compose** for the `external-controller` RESTful API of mihomo-compatible proxy cores. Look and features match Mimi Panel for HarmonyOS 1.2.10 (frosted glass, immersive light, accent colors, swipe between pages, pull to refresh, Chinese/English UI).
+A native Android dashboard written in **Kotlin + Jetpack Compose** for the `external-controller` RESTful API of mihomo-compatible proxy cores. Look and features match Mimi Panel for HarmonyOS 1.3.0 (frosted glass, immersive light, accent colors, swipe between pages, pull to refresh, Chinese/English UI).
 
 > The app **contains no proxy core** and never starts a proxy or VPN. It needs a backend that is already running (a core on your router or a LAN computer, or the external controller exposed by a proxy client on the phone).
 
@@ -10,12 +10,17 @@ A native Android dashboard written in **Kotlin + Jetpack Compose** for the `exte
 | --- | --- |
 | App name | Mimi Panel (Chinese 咪咪面板) |
 | Package | `com.mimipanel.andriod` (same for the GitHub and Huawei AppGallery builds; 1.2.10 and earlier used `net.zash.clashpanel`, so uninstall the old app first) |
-| Version | 1.2.10 (versionCode 1021000) |
+| Version | 1.3.0 (versionCode 1030000) |
 | Requirements | Android 8.0+ (minSdk 26, targetSdk 35); real-time frosted blur needs Android 12+ |
 | Permissions | `android.permission.INTERNET` only |
 | UI languages | Simplified Chinese, English (Settings → Language, can follow the system) |
 
 ## Changelog
+
+### 1.3.0
+- New (matches HarmonyOS 1.3.0): Gentle review prompt - after 3+ days installed, 5+ launches and 3+ successful backend connections, a soft review card occasionally appears above the bottom bar (at most once per 90 days, 3 times in the app's lifetime; "Later" snoozes it for 60 days). A permanent "Rate Mimi Panel" entry lives in Settings > About. All state stays on the device.
+- New (matches HarmonyOS 1.3.0): Global transition animations - page switches, the nav bar folding in and out, cards and banners appearing all animate smoothly over 150-380 ms; can be turned off in Settings > Panel > Appearance, and follows a system animator scale of 0 automatically.
+- New (matches HarmonyOS 1.3.0): Nav bar immersive light - the floating bar uses frosted glass with light rims and a glow, and the selected tab is accent-colored without a pill background; while on, the bar stays put and never folds away (on by default, switch in Settings > Panel > Nav Bar).
 
 ### 1.2.10
 - Improved (matches HarmonyOS 1.2.10): When the server has a label, the Overview header shows only the connection status and the label, without the "Overview" title or the core version.

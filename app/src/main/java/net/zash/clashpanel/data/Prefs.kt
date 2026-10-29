@@ -9,6 +9,7 @@ class Prefs(ctx: Context) {
     private val sp = ctx.getSharedPreferences("clash_panel", Context.MODE_PRIVATE)
 
     fun str(k: String, d: String): String = sp.getString(k, d) ?: d
+    fun long(k: String, d: Long): Long = sp.getLong(k, d)
     fun bool(k: String, d: Boolean): Boolean = sp.getBoolean(k, d)
     fun int(k: String, d: Int): Int = sp.getInt(k, d)
     fun float(k: String, d: Float): Float = sp.getFloat(k, d)

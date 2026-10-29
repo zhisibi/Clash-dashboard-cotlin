@@ -10,6 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -49,6 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
@@ -116,12 +118,27 @@ fun AppRoot(vm: MainViewModel, dark: Boolean, onExit: () -> Unit) {
     val main = vm.privacyAgreed && vm.backends.isNotEmpty()
     val wp = if (main) vm.wallpaper else null
     val pal = buildPalette(dark, vm.accent, vm.glassOn, vm.glassAlpha, wp != null, vm.cardAlpha)
-    val cfg = GlassCfg(vm.glassOn, vm.glassStyle, vm.glassBlur, vm.glassRows, vm.lightOn, vm.lightIntensity, vm.lightGlow, vm.lightDeg)
+    val cfg = GlassCfg(vm.glassOn, vm.glassStyle, vm.glassBlur, vm.glassRows, vm.lightOn, vm.lightIntensity, vm.lightGlow, vm.lightDeg, barLight = vm.navLight)
     TiltSensor(vm.lightOn && vm.lightTilt, vm.lightDeg) { vm.lightDeg = it }
+    // 1.3.0: global motion = user switch && system animator duration scale > 0
+    val actCtx = LocalContext.current
+    val sysAnimScale = remember {
+        runCatching {
+            android.provider.Settings.Global.getFloat(actCtx.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
+        }.getOrDefault(1f)
+    }
+    val motionOn = vm.motion && sysAnimScale > 0f
+    // 1.3.0: evaluate the gentle review prompt a few seconds after the main UI appears
+    LaunchedEffect(main) {
+        if (main) {
+            kotlinx.coroutines.delay(2500)
+            vm.considerReview(vm.connState == ConnState.Connecting)
+        }
+    }
     val bgBd = rememberBackdrop()
     val contentBd = rememberBackdrop()
     MimiTheme(pal) {
-        CompositionLocalProvider(LocalGlass provides cfg, LocalBgBackdrop provides bgBd, LocalContentBackdrop provides contentBd) {
+        CompositionLocalProvider(LocalGlass provides cfg, LocalBgBackdrop provides bgBd, LocalContentBackdrop provides contentBd, LocalMotion provides motionOn) {
             // Keyed by the UI language: switching rebuilds the tree (tab / settings sub-page live in the view model)
             key(I18n.lang) {
                 val ms = if (main) rememberMainState(vm) else null
@@ -174,9 +191,12 @@ private fun rememberMainState(vm: MainViewModel): MainState {
             vm.expandNav()
         }
     }
-    // view model -> pager (e.g. the failure banner opens Settings)
+    // view model -> pager (e.g. the failure banner opens Settings); instant jump while motion is off
+    val motionOn = LocalMotion.current
     LaunchedEffect(vm.tab) {
-        if (pager.settledPage != vm.tab && !pager.isScrollInProgress) pager.animateScrollToPage(vm.tab)
+        if (pager.settledPage != vm.tab && !pager.isScrollInProgress) {
+            if (motionOn) pager.animateScrollToPage(vm.tab) else pager.scrollToPage(vm.tab)
+        }
     }
     return ms
 }
@@ -234,9 +254,22 @@ private fun MainChrome(vm: MainViewModel, ms: MainState) {
                 }
             }
         }
+        val motionOn = LocalMotion.current
         Column(Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(start = 14.dp, end = 14.dp, bottom = navBottom())) {
-            if (vm.connState == ConnState.Failed && vm.tab != 5) FailBanner(vm)
-            BottomBar(vm, pager, ms.sweepKey) { i -> scope.launch { if (i != pager.currentPage) pager.animateScrollToPage(i) } }
+            AnimatedVisibility(vm.connState == ConnState.Failed && vm.tab != 5, enter = Motion.revealEnter(motionOn), exit = Motion.fadeExit(motionOn)) {
+                FailBanner(vm)
+            }
+            // 1.3.0: gentle review soft card above the bar
+            AnimatedVisibility(vm.reviewShow, enter = Motion.revealEnter(motionOn), exit = Motion.fadeExit(motionOn)) {
+                ReviewCard(vm)
+            }
+            BottomBar(vm, pager, ms.sweepKey) { i ->
+                scope.launch {
+                    if (i != pager.currentPage) {
+                        if (motionOn) pager.animateScrollToPage(i) else pager.scrollToPage(i)
+                    }
+                }
+            }
         }
     }
 }
@@ -282,11 +315,13 @@ private fun FailBanner(vm: MainViewModel) {
 @Composable
 private fun BottomBar(vm: MainViewModel, pager: PagerState, sweepKey: Int, onSelect: (Int) -> Unit) {
     val p = LocalPal.current
-    val collapsed = vm.autoHideNav && vm.navCollapsed
+    val motionOn = LocalMotion.current
+    // 1.3.0: with the immersive light on, the bar never collapses
+    val collapsed = !vm.navLight && vm.autoHideNav && vm.navCollapsed
     val sel = pager.targetPage
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val full = maxWidth
-        val spec = tween<Dp>(380, easing = FastOutSlowInEasing)
+        val spec = tween<Dp>(Motion.ms(Motion.NAV, motionOn), easing = FastOutSlowInEasing)
         val w by animateDpAsState(if (collapsed) DOT else full, spec, label = "w")
         val h by animateDpAsState(if (collapsed) DOT else BAR_H, spec, label = "h")
         val r by animateDpAsState(if (collapsed) DOT / 2 else 40.dp, spec, label = "r")
@@ -306,7 +341,8 @@ private fun BottomBar(vm: MainViewModel, pager: PagerState, sweepKey: Int, onSel
             contentAlignment = Alignment.Center,
         ) {
             AnimatedContent(collapsed, transitionSpec = {
-                (fadeIn(tween(220)) + scaleIn(initialScale = 0.6f)) togetherWith (fadeOut(tween(150)) + scaleOut(targetScale = 0.6f))
+                (fadeIn(tween(Motion.ms(Motion.BASE, motionOn))) + scaleIn(initialScale = 0.6f, animationSpec = tween(Motion.ms(Motion.BASE, motionOn)))) togetherWith
+                    (fadeOut(tween(Motion.ms(Motion.FAST, motionOn))) + scaleOut(targetScale = 0.6f, animationSpec = tween(Motion.ms(Motion.FAST, motionOn))))
             }, label = "bar") { c ->
                 if (c) {
                     Box(Modifier.size(DOT), contentAlignment = Alignment.Center) {
@@ -318,7 +354,8 @@ private fun BottomBar(vm: MainViewModel, pager: PagerState, sweepKey: Int, onSel
                             val on = i == sel
                             Column(
                                 Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(34.dp))
-                                    .background(if (on) p.accentSoft else Color.Transparent)
+                                    // 1.3.0: with the immersive light on there is no pill; the selection is accent color only
+                                    .background(if (on && !vm.navLight) p.accentSoft else Color.Transparent)
                                     .clickable { onSelect(i) },
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center,

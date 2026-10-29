@@ -66,7 +66,8 @@ fun headerGuess(rows: Int): Dp = WindowInsets.statusBars.asPaddingValues().calcu
 class NavScrollConnection(private val vm: MainViewModel, private val collapsePx: Float, private val expandPx: Float) : NestedScrollConnection {
     private var acc = 0f
     override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
-        if (!vm.autoHideNav) return Offset.Zero
+        // 1.3.0: with the nav bar immersive light on, the bar never auto-hides
+        if (!vm.autoHideNav || vm.navLight) return Offset.Zero
         val d = -consumed.y // > 0: content moves up (scrolling down)
         if (d == 0f) {
             if (available.y > 0f) { acc = 0f; vm.expandNav() }

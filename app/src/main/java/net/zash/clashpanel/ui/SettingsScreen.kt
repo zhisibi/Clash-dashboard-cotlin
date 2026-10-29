@@ -168,6 +168,10 @@ private fun AboutPage(vm: MainViewModel) {
             cm?.setPrimaryClip(android.content.ClipData.newPlainText("feedback", FEEDBACK_GROUP))
             vm.toast(t("copied"))
         })
+        // 1.3.0: permanent review entry (the gentle prompt is only a reminder; this row always stays)
+        RowItem(t("rate_app"), t("rate_app_desc"), onClick = { vm.openStoreListing("rate_open_failed") }) {
+            Icon(Icons.Outlined.ChevronRight, null, tint = ex.subtle)
+        }
         RowItem(t("compat_api"), t("compat_api_desc"))
     }
     Group(t("legal")) {
@@ -520,10 +524,14 @@ private fun PanelPage(vm: MainViewModel) {
                 Box(Modifier.fillMaxWidth(0.62f).fillMaxHeight().clip(RoundedCornerShape(3.dp)).background(ex.accentUi))
             }
         }
+        // 1.3.0: global transition animations (page switches, bar fold, cards appearing)
+        SwitchRow(t("motion"), t("motion_desc"), vm.motion) { vm.motion = it; vm.savePrefs() }
     }
 
     Group(t("nav_bar")) {
         SwitchRow(t("auto_hide_nav"), t("auto_hide_nav_desc"), vm.autoHideNav) { vm.setAutoHide(it) }
+        // 1.3.0: immersive light for the floating bar (while on, the bar does not auto-hide)
+        SwitchRow(t("nav_light"), t("nav_light_desc"), vm.navLight) { vm.setNavLightOn(it) }
     }
 
     Group(t("glass")) {
