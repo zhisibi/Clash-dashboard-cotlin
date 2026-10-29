@@ -2,7 +2,7 @@
 
 English · [简体中文](README.md)
 
-A native Android dashboard written in **Kotlin + Jetpack Compose** for the `external-controller` RESTful API of mihomo-compatible proxy cores. Look and features match Mimi Panel for HarmonyOS 1.3.0 (frosted glass, immersive light, accent colors, swipe between pages, pull to refresh, Chinese/English UI).
+A native Android dashboard written in **Kotlin + Jetpack Compose** for the `external-controller` RESTful API of mihomo-compatible proxy cores. Look and features match Mimi Panel for HarmonyOS 1.3.1 (frosted glass, immersive light, accent colors, swipe between pages, pull to refresh, Chinese/English UI).
 
 > The app **contains no proxy core** and never starts a proxy or VPN. It needs a backend that is already running (a core on your router or a LAN computer, or the external controller exposed by a proxy client on the phone).
 
@@ -10,12 +10,16 @@ A native Android dashboard written in **Kotlin + Jetpack Compose** for the `exte
 | --- | --- |
 | App name | Mimi Panel (Chinese 咪咪面板) |
 | Package | `com.mimipanel.andriod` (same for the GitHub and Huawei AppGallery builds; 1.2.10 and earlier used `net.zash.clashpanel`, so uninstall the old app first) |
-| Version | 1.3.0 (versionCode 1030000) |
+| Version | 1.3.1 (versionCode 1031000) |
 | Requirements | Android 8.0+ (minSdk 26, targetSdk 35); real-time frosted blur needs Android 12+ |
 | Permissions | `android.permission.INTERNET` only |
 | UI languages | Simplified Chinese, English (Settings → Language, can follow the system) |
 
 ## Changelog
+
+### 1.3.1
+- Improved (matches HarmonyOS 1.3.1): Card surfaces now lean slightly into the current accent color (6% on light, 10% on dark), so switching accents re-tints every card; glass / wallpaper transparency is unaffected.
+- New (matches HarmonyOS 1.3.1): Settings groups fold - tap a group title to collapse or expand it, the chevron rotates with the global motion setting, and the fold state is remembered; untitled groups never fold.
 
 ### 1.3.0
 - New (matches HarmonyOS 1.3.0): Gentle review prompt - after 3+ days installed, 5+ launches and 3+ successful backend connections, a soft review card occasionally appears above the bottom bar (at most once per 90 days, 3 times in the app's lifetime; "Later" snoozes it for 60 days). A permanent "Rate Mimi Panel" entry lives in Settings > About. All state stays on the device.

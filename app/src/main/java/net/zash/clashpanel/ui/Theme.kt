@@ -106,6 +106,10 @@ fun buildPalette(dark: Boolean, accentKey: String, glassOn: Boolean, glassAlpha:
         down = tone.ui, up = if (dark) lerp(tone.ui, Color.White, 0.45f) else lerp(tone.ui, base.text, 0.45f),
         downText = tone.text, upText = if (dark) lerp(tone.text, Color.White, 0.45f) else lerp(tone.text, base.text, 0.45f),
     )
+    // 1.3.1 (same as HarmonyOS 1.3.1): card surfaces lean a little into the accent color (light 6% / dark 10%,
+    // deliberately subtle so text contrast is untouched); applied before glass / wallpaper transparency so
+    // every surface - plain, frosted or over a wallpaper - follows.
+    p = p.copy(card = lerp(p.card, p.accentFill, if (dark) 0.10f else 0.06f))
     if (glassOn) {
         p = p.copy(
             bg = Color.Transparent, card = p.card.copy(alpha = glassAlpha),

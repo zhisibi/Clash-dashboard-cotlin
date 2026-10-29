@@ -1,6 +1,13 @@
 package net.zash.clashpanel.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,6 +27,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -205,10 +213,49 @@ private fun AboutPage(vm: MainViewModel) {
 }
 
 // ---------------- reusable rows ----------------
+/**
+ * Settings group. 1.3.1 (same as HarmonyOS 1.3.1): titled groups fold - the title row carries a chevron and
+ * toggles the card; the fold state persists in SharedPreferences under "fold.<title>" (default open).
+ * Untitled groups never fold.
+ */
 @Composable
 private fun Group(title: String? = null, content: @Composable ColumnScope.() -> Unit) {
-    if (title != null) SectionTitle(title) else Spacer(Modifier.height(14.dp))
-    Card0(Modifier.fillMaxWidth()) { Column(Modifier.padding(vertical = 4.dp), content = content) }
+    if (title == null) {
+        Spacer(Modifier.height(14.dp))
+        Card0(Modifier.fillMaxWidth()) { Column(Modifier.padding(vertical = 4.dp), content = content) }
+        return
+    }
+    val ex = LocalExtra.current
+    val ctx = LocalContext.current
+    val motionOn = LocalMotion.current
+    val sp = remember { ctx.getSharedPreferences("clash_panel", android.content.Context.MODE_PRIVATE) }
+    var open by remember(title) { mutableStateOf(sp.getBoolean("fold.$title", true)) }
+    Row(
+        Modifier.fillMaxWidth().clickable {
+            open = !open
+            sp.edit().putBoolean("fold.$title", open).apply()
+        }.padding(start = 6.dp, end = 6.dp, top = 18.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(title, Modifier.weight(1f), fontSize = 14.sp, color = ex.subtle, fontWeight = FontWeight.Medium)
+        val rot by animateFloatAsState(
+            if (open) 0f else -90f,
+            tween(Motion.ms(Motion.BASE, motionOn)), label = "fold",
+        )
+        Icon(
+            Icons.Outlined.KeyboardArrowDown, null,
+            Modifier.size(20.dp).rotate(rot), tint = ex.subtle,
+        )
+    }
+    AnimatedVisibility(
+        open,
+        enter = expandVertically(tween(Motion.ms(Motion.BASE, motionOn))) +
+            fadeIn(tween(Motion.ms(Motion.BASE, motionOn))),
+        exit = shrinkVertically(tween(Motion.ms(Motion.BASE, motionOn))) +
+            fadeOut(tween(Motion.ms(Motion.FAST, motionOn))),
+    ) {
+        Card0(Modifier.fillMaxWidth()) { Column(Modifier.padding(vertical = 4.dp), content = content) }
+    }
 }
 
 @Composable

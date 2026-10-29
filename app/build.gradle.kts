@@ -23,8 +23,8 @@ android {
         applicationId = "com.mimipanel.andriod"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1030000
-        versionName = "1.3.0"
+        versionCode = 1031000
+        versionName = "1.3.1"
     }
 
     signingConfigs {
