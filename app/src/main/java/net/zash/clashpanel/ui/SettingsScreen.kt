@@ -104,27 +104,29 @@ fun SettingsBody(vm: MainViewModel, top: Dp, bottom: Dp) {
             "" -> {
                 val q = vm.ui.settingsQuery.trim().lowercase()
                 val shown = sections.filter { s -> q.isEmpty() || (I18n.both(s.title) + " " + I18n.both(s.desc) + " " + I18n.both(s.keywords)).lowercase().contains(q) }
-                Card0(Modifier.fillMaxWidth()) {
-                    shown.forEachIndexed { i, s ->
-                        Row(
-                            Modifier.fillMaxWidth().clickable { vm.settingsPage = s.key; vm.expandNav() }.padding(18.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Box(Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(ex.chip), contentAlignment = Alignment.Center) {
-                                Icon(s.icon, null, Modifier.size(24.dp), tint = ex.text)
+                // 1.3.2: every settings-home entry is its own card (no shared card, no dividers)
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    shown.forEach { s ->
+                        Card0(Modifier.fillMaxWidth()) {
+                            Row(
+                                Modifier.fillMaxWidth().clickable { vm.settingsPage = s.key; vm.expandNav() }.padding(18.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Box(Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(ex.chip), contentAlignment = Alignment.Center) {
+                                    Icon(s.icon, null, Modifier.size(24.dp), tint = ex.text)
+                                }
+                                Spacer(Modifier.width(16.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(t(s.title), fontSize = 18.sp, color = ex.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(if (s.key == "lang") I18n.optionLabel(I18n.pref) else t(s.desc), fontSize = 14.sp, color = ex.subtle)
+                                }
+                                if (s.key == "crash" && vm.crashPrompt) {
+                                    Box(Modifier.padding(end = 8.dp).size(8.dp).clip(CircleShape).background(ex.bad))
+                                }
+                                Icon(Icons.Outlined.ChevronRight, null, tint = ex.subtle)
                             }
-                            Spacer(Modifier.width(16.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text(t(s.title), fontSize = 18.sp, color = ex.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Spacer(Modifier.height(4.dp))
-                                Text(if (s.key == "lang") I18n.optionLabel(I18n.pref) else t(s.desc), fontSize = 14.sp, color = ex.subtle)
-                            }
-                            if (s.key == "crash" && vm.crashPrompt) {
-                                Box(Modifier.padding(end = 8.dp).size(8.dp).clip(CircleShape).background(ex.bad))
-                            }
-                            Icon(Icons.Outlined.ChevronRight, null, tint = ex.subtle)
                         }
-                        if (i < shown.size - 1) HorizontalDivider(color = ex.outlineVariant)
                     }
                 }
             }
@@ -222,7 +224,8 @@ private fun AboutPage(vm: MainViewModel) {
 private fun Group(title: String? = null, content: @Composable ColumnScope.() -> Unit) {
     if (title == null) {
         Spacer(Modifier.height(14.dp))
-        Card0(Modifier.fillMaxWidth()) { Column(Modifier.padding(vertical = 4.dp), content = content) }
+        // 1.3.2: no shared wrapping card; every item is its own card (spacedBy 10)
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp), content = content)
         return
     }
     val ex = LocalExtra.current
@@ -237,7 +240,8 @@ private fun Group(title: String? = null, content: @Composable ColumnScope.() -> 
         }.padding(start = 6.dp, end = 6.dp, top = 18.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, Modifier.weight(1f), fontSize = 14.sp, color = ex.subtle, fontWeight = FontWeight.Medium)
+        // 1.3.2: group titles match the settings-home entry titles (18 sp, main text color)
+        Text(title, Modifier.weight(1f), fontSize = 18.sp, color = ex.text)
         val rot by animateFloatAsState(
             if (open) 0f else -90f,
             tween(Motion.ms(Motion.BASE, motionOn)), label = "fold",
@@ -254,22 +258,26 @@ private fun Group(title: String? = null, content: @Composable ColumnScope.() -> 
         exit = shrinkVertically(tween(Motion.ms(Motion.BASE, motionOn))) +
             fadeOut(tween(Motion.ms(Motion.FAST, motionOn))),
     ) {
-        Card0(Modifier.fillMaxWidth()) { Column(Modifier.padding(vertical = 4.dp), content = content) }
+        // 1.3.2: no shared wrapping card; every item is its own card (spacedBy 10)
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp), content = content)
     }
 }
 
 @Composable
 private fun RowItem(title: String, desc: String? = null, onClick: (() -> Unit)? = null, trailing: @Composable (() -> Unit)? = null) {
     val ex = LocalExtra.current
-    Row(
-        Modifier.fillMaxWidth().let { if (onClick != null) it.clickable(onClick = onClick) else it }.padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 16.sp, color = ex.text)
-            if (!desc.isNullOrBlank()) Text(desc, fontSize = 13.sp, color = ex.subtle)
+    // 1.3.2: every settings row is its own card
+    Card0(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth().let { if (onClick != null) it.clickable(onClick = onClick) else it }.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(title, fontSize = 16.sp, color = ex.text)
+                if (!desc.isNullOrBlank()) Text(desc, fontSize = 13.sp, color = ex.subtle)
+            }
+            if (trailing != null) { Spacer(Modifier.width(8.dp)); trailing() }
         }
-        if (trailing != null) { Spacer(Modifier.width(8.dp)); trailing() }
     }
 }
 
@@ -299,14 +307,17 @@ private fun BackendPage(vm: MainViewModel) {
     Group(t("backend_list")) {
         vm.backends.forEach { b ->
             val isActive = vm.active?.id == b.id
-            Row(Modifier.fillMaxWidth().clickable { if (!isActive) vm.connect(b) }.padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(isActive, { vm.connect(b) }, colors = accentRadioColors())
-                Column(Modifier.weight(1f)) {
-                    Text(b.display, fontSize = 16.sp)
-                    Text(b.baseUrl + if (b.secret.isNotEmpty()) " · 🔑" else "", fontSize = 12.sp, color = ex.subtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            // 1.3.2: every backend entry is its own card
+            Card0(Modifier.fillMaxWidth()) {
+                Row(Modifier.fillMaxWidth().clickable { if (!isActive) vm.connect(b) }.padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(isActive, { vm.connect(b) }, colors = accentRadioColors())
+                    Column(Modifier.weight(1f)) {
+                        Text(b.display, fontSize = 16.sp)
+                        Text(b.baseUrl + if (b.secret.isNotEmpty()) " · 🔑" else "", fontSize = 12.sp, color = ex.subtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    IconButton({ editing = b }) { Icon(Icons.Outlined.Edit, t("edit_backend")) }
+                    IconButton({ confirm = t("delete_backend_q", b.display) to { vm.deleteBackend(b) } }) { Icon(Icons.Outlined.Delete, null) }
                 }
-                IconButton({ editing = b }) { Icon(Icons.Outlined.Edit, t("edit_backend")) }
-                IconButton({ confirm = t("delete_backend_q", b.display) to { vm.deleteBackend(b) } }) { Icon(Icons.Outlined.Delete, null) }
             }
         }
         RowItem(t("add_backend"), onClick = { editing = Backend(vm.newBackendId()) }) { Icon(Icons.Outlined.Add, null) }
@@ -337,8 +348,11 @@ private fun BackendPage(vm: MainViewModel) {
         }
         Group(t("network")) {
             vm.unsupported["patch"]?.let { code ->
-                Text(t("patch_unsupported", code),
-                    Modifier.padding(horizontal = 16.dp, vertical = 8.dp), fontSize = 13.sp, color = LocalExtra.current.bad)
+                // 1.3.2: the unsupported note is a card of its own, like every other item
+                Card0(Modifier.fillMaxWidth()) {
+                    Text(t("patch_unsupported", code),
+                        Modifier.padding(horizontal = 16.dp, vertical = 12.dp), fontSize = 13.sp, color = LocalExtra.current.bad)
+                }
             }
             SwitchRow(t("tun_mode"), if (c.tunStack.isNotBlank()) t("tun_stack", c.tunStack) else null, c.tunEnable) { vm.setTun(it) }
             SwitchRow(t("allow_lan"), null, c.allowLan) { vm.setAllowLan(it) }
@@ -498,8 +512,11 @@ private fun WallpaperGroup(vm: MainViewModel) {
     Group(t("wallpaper")) {
         val wp = vm.wallpaper
         if (wp != null) {
-            Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth().height(160.dp).clip(RoundedCornerShape(14.dp))) {
-                androidx.compose.foundation.Image(wp, null, Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+            // 1.3.2: the wallpaper preview sits in a padded card of its own
+            Card0(Modifier.fillMaxWidth()) {
+                Box(Modifier.padding(12.dp).fillMaxWidth().height(160.dp).clip(RoundedCornerShape(14.dp))) {
+                    androidx.compose.foundation.Image(wp, null, Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                }
             }
         }
         RowItem(if (wp == null) t("wallpaper_upload") else t("wallpaper_change"), t("wallpaper_desc"), onClick = { pick() }) { Icon(Icons.Outlined.Wallpaper, null, tint = ex.text) }
@@ -517,9 +534,12 @@ private fun WallpaperGroup(vm: MainViewModel) {
 @Composable
 private fun SliderRow(title: String, value: Float, range: ClosedFloatingPointRange<Float>, label: String, onChange: (Float) -> Unit) {
     val ex = LocalExtra.current
-    Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
-        Row { Text(title, fontSize = 16.sp, color = ex.text, modifier = Modifier.weight(1f)); Text(label, fontSize = 13.sp, color = ex.subtle) }
-        Slider(value, onChange, valueRange = range, colors = accentSliderColors())
+    // 1.3.2: every settings row is its own card
+    Card0(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+            Row { Text(title, fontSize = 16.sp, color = ex.text, modifier = Modifier.weight(1f)); Text(label, fontSize = 13.sp, color = ex.subtle) }
+            Slider(value, onChange, valueRange = range, colors = accentSliderColors())
+        }
     }
 }
 
@@ -558,8 +578,9 @@ private fun PanelPage(vm: MainViewModel) {
                 }
             }
         }
-        // color preview
-        Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        // color preview (1.3.2: a card of its own)
+        Card0(Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(t("color_preview"), fontSize = 13.sp, color = ex.subtle)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(t("preview_button"), Modifier.clip(RoundedCornerShape(16.dp)).background(ex.primary).padding(horizontal = 16.dp, vertical = 7.dp), fontSize = 14.sp, color = ex.onPrimary)
@@ -570,6 +591,7 @@ private fun PanelPage(vm: MainViewModel) {
             Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(ex.chip)) {
                 Box(Modifier.fillMaxWidth(0.62f).fillMaxHeight().clip(RoundedCornerShape(3.dp)).background(ex.accentUi))
             }
+        }
         }
         // 1.3.0: global transition animations (page switches, bar fold, cards appearing)
         SwitchRow(t("motion"), t("motion_desc"), vm.motion) { vm.motion = it; vm.savePrefs() }
@@ -585,9 +607,12 @@ private fun PanelPage(vm: MainViewModel) {
         SwitchRow(t("glass"), t("glass_desc"), vm.glassOn) { vm.glassOn = it; vm.savePrefs() }
         if (vm.glassOn) {
             // title above the segments: four options (longer in English) don't fit beside the title
-            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(t("material"), fontSize = 16.sp, color = ex.text)
-                SegTabs(GLASS_KEYS.map { t("glass_$it") }, GLASS_KEYS.indexOf(vm.glassStyle).coerceAtLeast(0), { vm.glassStyle = GLASS_KEYS[it]; vm.savePrefs() }, dense = I18n.isEn)
+            // (1.3.2: a card of its own)
+            Card0(Modifier.fillMaxWidth()) {
+                Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(t("material"), fontSize = 16.sp, color = ex.text)
+                    SegTabs(GLASS_KEYS.map { t("glass_$it") }, GLASS_KEYS.indexOf(vm.glassStyle).coerceAtLeast(0), { vm.glassStyle = GLASS_KEYS[it]; vm.savePrefs() }, dense = I18n.isEn)
+                }
             }
             SliderRow(t("blur_strength"), vm.glassBlur.toFloat(), 0f..100f, "${vm.glassBlur}") { vm.glassBlur = it.roundToInt(); vm.savePrefs() }
             SliderRow(t("card_opacity"), vm.glassAlpha, 0.1f..0.95f, "${(vm.glassAlpha * 100).roundToInt()}%") { vm.glassAlpha = (it * 100).roundToInt() / 100f; vm.savePrefs() }
@@ -645,8 +670,11 @@ private fun ProxyPrefsPage(vm: MainViewModel) {
     val ex = LocalExtra.current
     var url by remember { mutableStateOf(vm.testUrl) }
     Group(t("latency_test")) {
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-            OutlinedTextField(url, { url = it; vm.testUrl = it.trim(); vm.savePrefs() }, Modifier.fillMaxWidth(), label = { Text(t("test_url")) }, singleLine = true)
+        // 1.3.2: the test URL field is a card of its own
+        Card0(Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                OutlinedTextField(url, { url = it; vm.testUrl = it.trim(); vm.savePrefs() }, Modifier.fillMaxWidth(), label = { Text(t("test_url")) }, singleLine = true)
+            }
         }
         NumberRow(t("test_timeout"), vm.testTimeout, "ms") { vm.testTimeout = it; vm.savePrefs() }
         SwitchRow(t("group_url_first"), null, vm.groupTestUrlFirst) { vm.groupTestUrlFirst = it; vm.savePrefs() }

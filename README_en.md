@@ -2,7 +2,7 @@
 
 English · [简体中文](README.md)
 
-A native Android dashboard written in **Kotlin + Jetpack Compose** for the `external-controller` RESTful API of mihomo-compatible proxy cores. Look and features match Mimi Panel for HarmonyOS 1.3.1 (frosted glass, immersive light, accent colors, swipe between pages, pull to refresh, Chinese/English UI).
+A native Android dashboard written in **Kotlin + Jetpack Compose** for the `external-controller` RESTful API of mihomo-compatible proxy cores. Look and features match Mimi Panel for HarmonyOS 1.3.2 (frosted glass, immersive light, accent colors, swipe between pages, pull to refresh, Chinese/English UI).
 
 > The app **contains no proxy core** and never starts a proxy or VPN. It needs a backend that is already running (a core on your router or a LAN computer, or the external controller exposed by a proxy client on the phone).
 
@@ -10,12 +10,15 @@ A native Android dashboard written in **Kotlin + Jetpack Compose** for the `exte
 | --- | --- |
 | App name | Mimi Panel (Chinese 咪咪面板) |
 | Package | `com.mimipanel.andriod` (same for the GitHub and Huawei AppGallery builds; 1.2.10 and earlier used `net.zash.clashpanel`, so uninstall the old app first) |
-| Version | 1.3.1 (versionCode 1031000) |
+| Version | 1.3.2 (versionCode 1032000) |
 | Requirements | Android 8.0+ (minSdk 26, targetSdk 35); real-time frosted blur needs Android 12+ |
 | Permissions | `android.permission.INTERNET` only |
 | UI languages | Simplified Chinese, English (Settings → Language, can follow the system) |
 
 ## Changelog
+
+### 1.3.2
+- Improved (matches HarmonyOS 1.3.2): Every item on the settings home and on the sub-pages is now its own card (no more shared card with dividers); group titles on sub-pages use the same 18 sp main text style as the settings-home entries.
 
 ### 1.3.1
 - Improved (matches HarmonyOS 1.3.1): Card surfaces now lean slightly into the current accent color (6% on light, 10% on dark), so switching accents re-tints every card; glass / wallpaper transparency is unaffected.

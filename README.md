@@ -2,7 +2,7 @@
 
 [English](README_en.md) · 简体中文
 
-用 **Kotlin + Jetpack Compose** 编写的原生安卓管理面板，适用于与 mihomo 兼容的代理内核所提供的 `external-controller` RESTful API。界面与功能和 HarmonyOS 版咪咪面板 1.3.1 保持一致（毛玻璃、沉浸光感、主题色、左右滑动切页、下拉刷新、中英文界面）。
+用 **Kotlin + Jetpack Compose** 编写的原生安卓管理面板，适用于与 mihomo 兼容的代理内核所提供的 `external-controller` RESTful API。界面与功能和 HarmonyOS 版咪咪面板 1.3.2 保持一致（毛玻璃、沉浸光感、主题色、左右滑动切页、下拉刷新、中英文界面）。
 
 > App 本身**不包含代理内核**，也不会启动代理服务或 VPN，需要配合已在运行的后端使用（例如路由器或局域网电脑上的内核，或手机上的代理客户端开放的外部控制器）。
 
@@ -10,12 +10,15 @@
 | --- | --- |
 | 应用名 | 咪咪面板（英文 Mimi Panel） |
 | 包名 | `com.mimipanel.andriod`（GitHub 版与华为应用市场版相同；1.2.10 及以前为 `net.zash.clashpanel`，需卸载旧版后安装） |
-| 版本 | 1.3.1（versionCode 1031000） |
+| 版本 | 1.3.2（versionCode 1032000） |
 | 系统要求 | Android 8.0 及以上（minSdk 26，targetSdk 35）；实时毛玻璃模糊需要 Android 12+ |
 | 权限 | 只有 `android.permission.INTERNET` |
 | 界面语言 | 简体中文、English（设置 → 语言，可跟随系统） |
 
 ## 更新日志
+
+### 1.3.2
+- 优化（与 HarmonyOS 1.3.2 保持一致）：设置页一、二级菜单的每一项都独立成卡片（不再共用一张大卡加分割线）；二级菜单分组标题改为与一级菜单条目相同的 18 号主文字色。
 
 ### 1.3.1
 - 优化（与 HarmonyOS 1.3.1 保持一致）：卡片底色向当前主题色淡淡混色（浅色 6%、深色 10%），换主题色时所有卡片跟着换色调，玻璃/壁纸透明度不受影响。

@@ -43,21 +43,25 @@ fun CrashLogPage(onSeen: () -> Unit = {}) {
         }
     }
     Spacer(Modifier.height(12.dp))
-    Card0(Modifier.fillMaxWidth()) {
-        if (files.isEmpty()) {
+    // 1.3.2: every crash file is a card of its own (no shared card, no dividers)
+    if (files.isEmpty()) {
+        Card0(Modifier.fillMaxWidth()) {
             Text(t("no_crash"), Modifier.padding(20.dp), color = ex.subtle)
-        } else {
-            files.forEachIndexed { i, f ->
-                Row(Modifier.fillMaxWidth().clickable { open = f }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.BugReport, null, tint = ex.bad)
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(f.name.removePrefix("crash-").removeSuffix(".txt").let { runCatching { "${it.substring(0, 4)}-${it.substring(4, 6)}-${it.substring(6, 8)} ${it.substring(9, 11)}:${it.substring(11, 13)}:${it.substring(13, 15)}" }.getOrDefault(it) }, fontSize = 16.sp, color = ex.text)
-                        Text(firstErrorLine(f), fontSize = 12.sp, color = ex.subtle, maxLines = 2)
+        }
+    } else {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            files.forEach { f ->
+                Card0(Modifier.fillMaxWidth()) {
+                    Row(Modifier.fillMaxWidth().clickable { open = f }.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Outlined.BugReport, null, tint = ex.bad)
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(f.name.removePrefix("crash-").removeSuffix(".txt").let { runCatching { "${it.substring(0, 4)}-${it.substring(4, 6)}-${it.substring(6, 8)} ${it.substring(9, 11)}:${it.substring(11, 13)}:${it.substring(13, 15)}" }.getOrDefault(it) }, fontSize = 16.sp, color = ex.text)
+                            Text(firstErrorLine(f), fontSize = 12.sp, color = ex.subtle, maxLines = 2)
+                        }
+                        Icon(Icons.Outlined.ChevronRight, null, tint = ex.subtle)
                     }
-                    Icon(Icons.Outlined.ChevronRight, null, tint = ex.subtle)
                 }
-                if (i < files.size - 1) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
         }
     }
