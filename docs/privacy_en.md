@@ -27,7 +27,7 @@ Uninstalling the App deletes all of the above. You can also delete backends, rem
 
 ## 3. Network access
 
-- The App requests the network permission (android.permission.INTERNET), the only permission it requests. Except as listed below, network requests go only to the backend addresses you configure, to read and change the proxy core's status, configuration, connections, logs and rules.
+- The App requests the network permission (android.permission.INTERNET). Except as listed below, network requests go only to the backend addresses you configure, to read and change the proxy core's status, configuration, connections, logs and rules. On Android 9 and below (API 28 and lower) only, the App also declares the storage permission (android.permission.WRITE_EXTERNAL_STORAGE), used solely to write a copy of crash logs into the public Download/MimiPanel folder so logs can be retrieved when the App itself will not open; on Android 10 and later the system media store is used instead and no such permission is needed.
 - Node latency tests are performed by your backend: the App only passes the test URL you set (default https://www.gstatic.com/generate_204) to the backend as a parameter and never visits that URL itself.
 - If your proxy configuration sets icon URLs for proxy groups, the App loads those icon images from those URLs.
 - Update check: only when you tap Settings > About > Version, the App asks GitHub (api.github.com) for the version number of this project's latest release; if there is a newer one and you choose Update, it opens the GitHub release page in the system browser. The request carries no personal information or device identifier; GitHub may log access details such as your IP address under its own privacy policy.

@@ -167,6 +167,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private var wsJobs = mutableListOf<Job>()
     private var logJob: Job? = null
 
+    // Review-prompt state. MUST be declared before the init block below: Kotlin runs
+    // property initializers and init blocks in declaration order, and init calls
+    // reviewInit(), which dereferences this object. It used to be declared in the
+    // review section further down (since 1.3.0), so it was still null at that point
+    // and every cold start died with an NPE in MainViewModel.<init> (fixed in 1.4.15).
+    private val review = ReviewData()
+
     init {
         reviewInit()
         I18n.init(prefs.str("lang", "system"))
@@ -250,7 +257,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     // ================= gentle review prompt (1.3.0, same spec as the HarmonyOS app) =================
     // State lives only in SharedPreferences (keys review.*) and never leaves the device.
-    private val review = ReviewData()
+    // (The ReviewData instance itself is declared above the init block — see the note there.)
     var reviewShow by mutableStateOf(false); private set
 
     private fun reviewLoad() {

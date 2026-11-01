@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <!-- The only permission: network access to the backends the user configures -->
+    <!-- Network access to the backends the user configures -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Legacy external storage, only so crash logs can be mirrored into the public
+         Download/MimiPanel folder on API 26-28 (1.4.15). API 29+ uses MediaStore and
+         needs no permission; this declaration is capped at API 28. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
     <!-- androidx.core adds this signature permission for dynamic receivers; the app registers none -->
     <permission android:name="${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" tools:node="remove" />
     <uses-permission android:name="${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" tools:node="remove" />

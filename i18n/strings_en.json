@@ -312,7 +312,7 @@
  "saved_file": "Saved {0}",
  "save_failed": "Save failed",
  "close_btn": "Close",
- "crash_intro": "When the app crashes, the error stack is recorded automatically. Open a log to copy, share or save it for the developer.",
+ "crash_intro": "When the app crashes, the error stack is recorded automatically, with a copy saved to the system Download/MimiPanel folder — reachable from any file manager even if the app will not open. Open a log to copy, share or save it for the developer.",
  "no_crash": "No crashes recorded",
  "clear_crash": "Clear crash logs",
  "cleared": "Cleared",

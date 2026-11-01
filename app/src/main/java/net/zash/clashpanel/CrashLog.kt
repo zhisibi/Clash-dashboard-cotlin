@@ -1,8 +1,11 @@
 package net.zash.clashpanel
 
 import android.app.Application
+import android.content.ContentValues
 import android.content.Context
 import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
@@ -48,9 +51,37 @@ object CrashLog {
         }
         val f = File(dir(ctx), "crash-" + SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(now) + ".txt")
         f.writeText(text)
+        // Mirror a copy into the public Download/MimiPanel folder (1.4.15): when the app
+        // itself will not open, the user can still grab the log with any file manager.
+        // Best effort only — a mirror failure must never disturb the crash flow.
+        runCatching { mirrorToDownloads(ctx, f.name, text) }
         // keep latest 20
         list(ctx).drop(20).forEach { it.delete() }
         ctx.getSharedPreferences("crash", Context.MODE_PRIVATE).edit().putBoolean("unseen", true).commit()
+    }
+
+    /**
+     * Writes [text] as Download/MimiPanel/[name]. Scoped storage: on API 29+ a MediaStore
+     * Downloads insert needs no permission; on API 26-28 the public Downloads directory is
+     * written directly (WRITE_EXTERNAL_STORAGE, manifest-capped at API 28). Any failure
+     * (permission denied, volume missing) propagates to the caller's runCatching.
+     */
+    private fun mirrorToDownloads(ctx: Context, name: String, text: String) {
+        if (Build.VERSION.SDK_INT >= 29) {
+            val values = ContentValues().apply {
+                put(MediaStore.Downloads.DISPLAY_NAME, name)
+                put(MediaStore.Downloads.MIME_TYPE, "text/plain")
+                put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/MimiPanel")
+            }
+            val uri = ctx.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+                ?: error("MediaStore insert returned null")
+            ctx.contentResolver.openOutputStream(uri, "wt")!!.use { it.write(text.toByteArray()) }
+        } else {
+            @Suppress("DEPRECATION")
+            val pub = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            val folder = File(pub, "MimiPanel").apply { mkdirs() }
+            File(folder, name).writeText(text)
+        }
     }
 
     fun list(ctx: Context): List<File> = dir(ctx).listFiles()?.filter { it.name.endsWith(".txt") }?.sortedByDescending { it.name } ?: emptyList()
