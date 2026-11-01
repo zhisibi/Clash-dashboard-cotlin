@@ -1,1 +1,15 @@
-<resources><string name="app_name">咪咪面板</string></resources>
+<resources>
+    <string name="app_name">咪咪面板</string>
+    <string name="widget_name">咪咪面板小组件</string>
+    <string name="widget_desc">一眼看后端状态、实时速度、连接数与出口地区</string>
+    <string name="widget_open_hint">打开咪咪面板开始使用</string>
+    <string name="widget_connected">已连接</string>
+    <string name="widget_disconnected">未连接</string>
+    <string name="widget_conns">%1$d 条连接</string>
+    <string name="widget_refresh">刷新</string>
+    <string name="widget_mode_rule">规则</string>
+    <string name="widget_mode_global">全局</string>
+    <string name="widget_mode_direct">直连</string>
+    <string name="widget_switch">切换</string>
+    <string name="widget_failed">操作失败，打开应用重试</string>
+</resources>

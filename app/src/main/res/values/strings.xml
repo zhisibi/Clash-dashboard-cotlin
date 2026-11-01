@@ -1,1 +1,15 @@
-<resources><string name="app_name">Mimi Panel</string></resources>
+<resources>
+    <string name="app_name">Mimi Panel</string>
+    <string name="widget_name">Mimi Panel widget</string>
+    <string name="widget_desc">Backend status, live speeds, connections and egress at a glance</string>
+    <string name="widget_open_hint">Open Mimi Panel to get started</string>
+    <string name="widget_connected">Connected</string>
+    <string name="widget_disconnected">Not connected</string>
+    <string name="widget_conns">%1$d conns</string>
+    <string name="widget_refresh">Refresh</string>
+    <string name="widget_mode_rule">Rule</string>
+    <string name="widget_mode_global">Global</string>
+    <string name="widget_mode_direct">Direct</string>
+    <string name="widget_switch">Switch</string>
+    <string name="widget_failed">Action failed, open the app to retry</string>
+</resources>

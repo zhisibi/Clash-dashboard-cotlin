@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Home-screen widget metadata (1.4.0). Target 4x2 cells, resizable down to 2x1. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="180dp"
+    android:minHeight="72dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
+    android:minResizeWidth="140dp"
+    android:minResizeHeight="56dp"
+    android:maxResizeWidth="360dp"
+    android:maxResizeHeight="220dp"
+    android:initialLayout="@layout/widget_mimi"
+    android:previewLayout="@layout/widget_mimi"
+    android:description="@string/widget_desc"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:updatePeriodMillis="1800000" />

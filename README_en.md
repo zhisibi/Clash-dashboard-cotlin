@@ -2,7 +2,7 @@
 
 English · [简体中文](README.md)
 
-A native Android dashboard written in **Kotlin + Jetpack Compose** for the `external-controller` RESTful API of mihomo-compatible proxy cores. Look and features match Mimi Panel for HarmonyOS 1.3.5 (frosted glass, immersive light, accent colors, swipe between pages, pull to refresh, Chinese/English UI).
+A native Android dashboard written in **Kotlin + Jetpack Compose** for the `external-controller` RESTful API of mihomo-compatible proxy cores. Look and features match Mimi Panel for HarmonyOS 1.3.5 (egress check and widget added in 1.4.0, aligned with HarmonyOS 1.4.0) (frosted glass, immersive light, accent colors, swipe between pages, pull to refresh, Chinese/English UI).
 
 > The app **contains no proxy core** and never starts a proxy or VPN. It needs a backend that is already running (a core on your router or a LAN computer, or the external controller exposed by a proxy client on the phone).
 
@@ -10,12 +10,18 @@ A native Android dashboard written in **Kotlin + Jetpack Compose** for the `exte
 | --- | --- |
 | App name | Mimi Panel (Chinese 咪咪面板) |
 | Package | `com.mimipanel.andriod` (same for the GitHub and Huawei AppGallery builds; 1.2.10 and earlier used `net.zash.clashpanel`, so uninstall the old app first) |
-| Version | 1.3.5 (versionCode 1035000) |
+| Version | 1.4.0 (versionCode 1040000) |
 | Requirements | Android 8.0+ (minSdk 26, targetSdk 35); real-time frosted blur needs Android 12+ |
 | Permissions | `android.permission.INTERNET` only |
 | UI languages | Simplified Chinese, English (Settings → Language, can follow the system) |
 
 ## Changelog
+
+### 1.4.0
+- New **Egress Check** on Overview: shows the device's current network egress IP (large), country/region/city, ISP/organization, request time and check time, with copy-IP and re-check (ipwho.is first, Cloudflare trace as fallback). When device traffic goes through a proxy, this is the proxy egress.
+- New **home-screen widget**: red-to-purple gradient card with connection status, backend label, live up/down speeds, active connections, totals, latest egress region/IP and snapshot time; a refresh button re-reads the local snapshot, tapping the card opens the app. The widget is operable: tap Rule / Global / Direct to switch the proxy mode (current mode highlighted), and tap Switch on the node row to cycle to the next node in the main selector group — the widget calls the backend directly and writes the result back to the snapshot.
+- Gentle review prompt copy refreshed with a note from the developer (frequency rules unchanged).
+- Privacy policy updated (version 3): the egress check contacts ipwho.is / Cloudflare only on tap, the services see the egress IP, and no backend address or secret is sent; the local widget snapshot is documented.
 
 ### 1.3.5
 - Improved (matches HarmonyOS 1.3.5): New fresh-install defaults - the default accent is now red ("Huawei red"); frosted glass is on by default (custom material, blur strength 20, card opacity 20%); immersive light is on by default; the nav bar immersive light stays on by default; list-row blur stays off by default. Settings saved by existing installs are unaffected.

@@ -27,5 +27,21 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <receiver
+            android:name=".widget.MimiWidgetProvider"
+            android:exported="false"
+            android:label="@string/widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="net.zash.clashpanel.WIDGET_REFRESH" />
+                <action android:name="net.zash.clashpanel.WIDGET_MODE_RULE" />
+                <action android:name="net.zash.clashpanel.WIDGET_MODE_GLOBAL" />
+                <action android:name="net.zash.clashpanel.WIDGET_MODE_DIRECT" />
+                <action android:name="net.zash.clashpanel.WIDGET_CYCLE_NODE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/mimi_widget_info" />
+        </receiver>
     </application>
 </manifest>

@@ -123,6 +123,64 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var memory by mutableLongStateOf(0); private set
     var memoryHistory by mutableStateOf<List<Long>>(List(60) { 0L }); private set
 
+    // ----- egress check (1.4.0) -----
+    // The device's own network egress (via the proxy when the device is proxied). Runs only on demand.
+    var egress by mutableStateOf<EgressInfo?>(null); private set
+    var egressChecking by mutableStateOf(false); private set
+    var egressFailed by mutableStateOf(false); private set
+
+    fun detectEgress() {
+        if (egressChecking || !privacyAgreed) return
+        egressChecking = true; egressFailed = false
+        viewModelScope.launch {
+            try {
+                egress = EgressChecker.check()
+                writeWidgetSnapshot(force = true)
+            } catch (e: CancellationException) { throw e } catch (e: Throwable) {
+                egressFailed = true
+            } finally { egressChecking = false }
+        }
+    }
+
+    // ----- home-screen widget snapshot (1.4.0) -----
+    private var lastWidgetWrite = 0L
+
+    /** Main selector group for the widget's node row: first Selector group, else the first group. */
+    private val mainGroup: Proxy?
+        get() = groups.firstOrNull { it.type.equals("Selector", true) && it.name != "GLOBAL" }
+            ?: groups.firstOrNull { it.name != "GLOBAL" }
+
+    /** Throttled (~5 s) snapshot for the home-screen widget; force=true bypasses the throttle. */
+    fun writeWidgetSnapshot(force: Boolean = false) {
+        val now = System.currentTimeMillis()
+        if (!force && now - lastWidgetWrite < 5000) return
+        lastWidgetWrite = now
+        val app = getApplication<Application>()
+        val night = when (theme) {
+            "dark" -> true
+            "light" -> false
+            else -> (app.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                android.content.res.Configuration.UI_MODE_NIGHT_YES
+        }
+        net.zash.clashpanel.widget.WidgetSnapshot.write(
+            app,
+            net.zash.clashpanel.widget.WidgetData(
+                connected = connState == ConnState.Connected,
+                backendLabel = if (connState == ConnState.Connected) active?.display ?: "" else "",
+                upSpeed = traffic.up, downSpeed = traffic.down,
+                connCount = activeConns.size,
+                totalUp = connTotalUp, totalDown = connTotalDown,
+                egressText = egress?.shortText ?: "",
+                egressIp = egress?.ip ?: "",
+                dark = night || accent == "black",
+                modeKey = config.mode,
+                groupName = mainGroup?.name ?: "",
+                nodeText = mainGroup?.let { resolveNow(it.name) } ?: "",
+            ),
+        )
+        net.zash.clashpanel.widget.WidgetSnapshot.requestUpdate(app)
+    }
+
     val toasts = MutableSharedFlow<String>(extraBufferCapacity = 8)
     val toastFlow = toasts.asSharedFlow()
 
@@ -371,6 +429,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         api = null; active = null; prefs.activeBackendId = null
         connState = ConnState.Idle
         proxies = emptyMap(); rules = emptyList(); activeConns = emptyList(); logs = emptyList()
+        traffic = Traffic(); connTotalUp = 0; connTotalDown = 0
+        writeWidgetSnapshot(force = true)
     }
 
     fun connect(b: Backend) {
@@ -388,12 +448,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 if (api !== a) return@launch
                 version = v; isMeta = meta || v.contains("meta", true) || v.startsWith("v1.1") || v.startsWith("alpha")
                 connState = ConnState.Connected
+                writeWidgetSnapshot(force = true)
                 onBackendConnected()
                 startStreams(a)
                 refreshAll()
             } catch (e: CancellationException) { throw e } catch (e: Throwable) {
                 if (api !== a) return@launch
                 connState = ConnState.Failed; connError = errMsg(e)
+                writeWidgetSnapshot(force = true)
             }
         }
     }
@@ -457,6 +519,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             val t = Traffic(o.l("up"), o.l("down"), o.l("upTotal"), o.l("downTotal"))
             traffic = t
             trafficHistory = (trafficHistory + t).takeLast(60)
+            writeWidgetSnapshot()
         }
         wsJobs += stream(a, "/memory") { e ->
             val m = e.jsonObject.l("inuse")
@@ -507,6 +570,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         prevConns = withSpeed.associateBy { it.id }
         if (closedNow.isNotEmpty()) closedConns = (closedNow + closedConns).take(closedConnMax)
         if (!connsPaused) activeConns = withSpeed
+        writeWidgetSnapshot()
     }
 
     // ================= config =================
@@ -516,6 +580,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val a = api ?: return@launchSafe
         a.patchConfigs(buildJsonObject { put("mode", mode) })
         config = config.copy(mode = mode)
+        writeWidgetSnapshot(force = true)
         refreshProxies()
     }
 
