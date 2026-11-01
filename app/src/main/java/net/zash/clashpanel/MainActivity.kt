@@ -128,13 +128,6 @@ fun AppRoot(vm: MainViewModel, dark: Boolean, onExit: () -> Unit) {
         }.getOrDefault(1f)
     }
     val motionOn = vm.motion && sysAnimScale > 0f
-    // 1.3.0: evaluate the gentle review prompt a few seconds after the main UI appears
-    LaunchedEffect(main) {
-        if (main) {
-            kotlinx.coroutines.delay(2500)
-            vm.considerReview(vm.connState == ConnState.Connecting)
-        }
-    }
     val bgBd = rememberBackdrop()
     val contentBd = rememberBackdrop()
     MimiTheme(pal) {
@@ -258,10 +251,6 @@ private fun MainChrome(vm: MainViewModel, ms: MainState) {
         Column(Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(start = 14.dp, end = 14.dp, bottom = navBottom())) {
             AnimatedVisibility(vm.connState == ConnState.Failed && vm.tab != 5, enter = Motion.revealEnter(motionOn), exit = Motion.fadeExit(motionOn)) {
                 FailBanner(vm)
-            }
-            // 1.3.0: gentle review soft card above the bar
-            AnimatedVisibility(vm.reviewShow, enter = Motion.revealEnter(motionOn), exit = Motion.fadeExit(motionOn)) {
-                ReviewCard(vm)
             }
             BottomBar(vm, pager, ms.sweepKey) { i ->
                 scope.launch {

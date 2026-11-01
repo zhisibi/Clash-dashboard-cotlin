@@ -167,15 +167,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private var wsJobs = mutableListOf<Job>()
     private var logJob: Job? = null
 
-    // Review-prompt state. MUST be declared before the init block below: Kotlin runs
-    // property initializers and init blocks in declaration order, and init calls
-    // reviewInit(), which dereferences this object. It used to be declared in the
-    // review section further down (since 1.3.0), so it was still null at that point
-    // and every cold start died with an NPE in MainViewModel.<init> (fixed in 1.4.15).
-    private val review = ReviewData()
-
     init {
-        reviewInit()
         I18n.init(prefs.str("lang", "system"))
         ui.connSort = prefs.connSort; ui.connDesc = prefs.connSortDesc
         // No network requests before the privacy policy / user agreement are accepted
@@ -253,89 +245,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 return true
             } catch (e2: Exception) { toast(t(failKey)); return false }
         }
-    }
-
-    // ================= gentle review prompt (1.3.0, same spec as the HarmonyOS app) =================
-    // State lives only in SharedPreferences (keys review.*) and never leaves the device.
-    // (The ReviewData instance itself is declared above the init block — see the note there.)
-    var reviewShow by mutableStateOf(false); private set
-
-    private fun reviewLoad() {
-        review.firstSeen = prefs.long("review.firstSeen", 0)
-        review.launches = prefs.int("review.launches", 0)
-        review.successes = prefs.int("review.successes", 0)
-        review.shown = prefs.int("review.shown", 0)
-        review.lastShown = prefs.long("review.lastShown", 0)
-        review.snoozeUntil = prefs.long("review.snoozeUntil", 0)
-        review.life = prefs.str("review.life", "pending").let { if (it == "rated" || it == "never") it else "pending" }
-    }
-
-    private fun reviewSave() {
-        prefs.put("review.firstSeen", review.firstSeen)
-        prefs.put("review.launches", review.launches)
-        prefs.put("review.successes", review.successes)
-        prefs.put("review.shown", review.shown)
-        prefs.put("review.lastShown", review.lastShown)
-        prefs.put("review.snoozeUntil", review.snoozeUntil)
-        prefs.put("review.life", review.life)
-    }
-
-    /** Once per process (VM init): loads the state and counts one launch. */
-    private fun reviewInit() {
-        reviewLoad()
-        reviewRecordLaunch(review, System.currentTimeMillis())
-        reviewSave()
-        android.util.Log.i("Review", "init: launches=${review.launches} successes=${review.successes} shown=${review.shown} life=${review.life}")
-    }
-
-    /** A successful connection: count it, then evaluate once the UI has settled (2 s). */
-    private fun onBackendConnected() {
-        reviewRecordSuccess(review)
-        reviewSave()
-        android.util.Log.i("Review", "backend success counted: ${review.successes}")
-        viewModelScope.launch { delay(2000); considerReview(false) }
-    }
-
-    /**
-     * Evaluates whether the soft card may show now; when it may, the display is counted and saved immediately
-     * (counted at display: a killed process cannot prompt twice). Never before consent / with no backend.
-     */
-    fun considerReview(busy: Boolean) {
-        if (reviewShow || !privacyAgreed || backends.isEmpty()) return
-        val now = System.currentTimeMillis()
-        if (!reviewShouldShow(review, now, busy)) {
-            android.util.Log.i("Review", "consider blocked: " + reviewBlockers(review, now, busy).joinToString(","))
-            return
-        }
-        reviewRecordShown(review, now)
-        reviewSave()
-        reviewShow = true
-        android.util.Log.i("Review", "card shown (${review.shown})")
-    }
-
-    /** "Rate": state saved first (automatic prompts off for good), then the listing opens. */
-    fun reviewRate() {
-        reviewChooseRate(review); reviewSave(); reviewShow = false
-        android.util.Log.i("Review", "user chose rate")
-        openStoreListing("rate_open_failed")
-    }
-
-    /** "Later" (and the card's close button): snooze 60 days. */
-    fun reviewLater() {
-        reviewChooseLater(review, System.currentTimeMillis()); reviewSave(); reviewShow = false
-        android.util.Log.i("Review", "user chose later")
-    }
-
-    /** The feedback entry in the card body: same snooze as "Later". */
-    fun reviewFeedback() {
-        reviewChooseLater(review, System.currentTimeMillis()); reviewSave(); reviewShow = false
-        android.util.Log.i("Review", "user chose feedback")
-    }
-
-    /** "Don't remind me": automatic prompts off for good. */
-    fun reviewNever() {
-        reviewChooseNever(review); reviewSave(); reviewShow = false
-        android.util.Log.i("Review", "user chose never")
     }
 
     fun errMsg(e: Throwable): String = when (e) {
@@ -435,7 +344,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 version = v; isMeta = meta || v.contains("meta", true) || v.startsWith("v1.1") || v.startsWith("alpha")
                 connState = ConnState.Connected
                 writeWidgetSnapshot(force = true)
-                onBackendConnected()
                 startStreams(a)
                 refreshAll()
             } catch (e: CancellationException) { throw e } catch (e: Throwable) {

@@ -10,12 +10,15 @@
 | --- | --- |
 | 应用名 | 咪咪面板（英文 Mimi Panel） |
 | 包名 | `com.mimipanel.andriod`（GitHub 版与华为应用市场版相同；1.2.10 及以前为 `net.zash.clashpanel`，需卸载旧版后安装） |
-| 版本 | 1.4.15（versionCode 1055000） |
+| 版本 | 1.4.16（versionCode 1056000） |
 | 系统要求 | Android 8.0 及以上（minSdk 26，targetSdk 35）；实时毛玻璃模糊需要 Android 12+ |
 | 权限 | `android.permission.INTERNET`；另有 `WRITE_EXTERNAL_STORAGE`（仅 Android 9 及以下、maxSdkVersion 28）用于把闪退日志镜像到公共下载目录，Android 10+ 不申请 |
 | 界面语言 | 简体中文、English（设置 → 语言，可跟随系统） |
 
 ## 更新日志
+
+### 1.4.16
+- **移除评分功能（老板要求）**：去掉设置 → 关于里的「给咪咪面板评价」常驻入口，以及满足条件后自动弹出的温柔引导评价卡片与整套频控逻辑（ReviewData / ReviewLogic / ReviewCard 及 ViewModel 中的 review 状态、计数与调用点全部删除，中英文评价文案一并清理）。隐私政策不变（评分不涉及数据处理，政策版本仍为 4，升级不会再要求重新确认）。其余功能不变
 
 ### 1.4.15
 - **修复冷启动必崩（1.4.14 真机反馈「运行闪退、无法使用」）**：根因是 `MainViewModel` 的属性初始化顺序——`init` 块（类体前部）第一行就调用 `reviewInit()`，而它要写的 `review`（ReviewData）属性声明在类体后部，Kotlin 按声明顺序初始化，`init` 执行时该属性尚为 null，`reviewLoad()` 写 `firstSeen` 直接 NPE，ViewModel 创建失败导致 MainActivity 无法启动。模拟器实测：1.4.14 与 1.4.1 的全新安装、1.4.1→1.4.14 覆盖升级三条路径均为同一堆栈（该缺陷自 1.3.0 评价功能引入时即存在，与 1.4.14 的小组件改动无关）。修复：把 `review` 属性声明移到 `init` 块之前（附注释说明），其余逻辑不动。模拟器复验：全新安装冷启、1.4.1 覆盖升级到 1.4.15、添加桌面小组件三条路径全部通过

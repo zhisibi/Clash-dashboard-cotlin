@@ -181,10 +181,6 @@ private fun AboutPage(vm: MainViewModel) {
             cm?.setPrimaryClip(android.content.ClipData.newPlainText("feedback", FEEDBACK_GROUP))
             vm.toast(t("copied"))
         })
-        // 1.3.0: permanent review entry (the gentle prompt is only a reminder; this row always stays)
-        RowItem(t("rate_app"), t("rate_app_desc"), onClick = { vm.openStoreListing("rate_open_failed") }) {
-            Icon(Icons.Outlined.ChevronRight, null, tint = ex.subtle)
-        }
         RowItem(t("compat_api"), t("compat_api_desc"))
     }
     Group(t("legal")) {
