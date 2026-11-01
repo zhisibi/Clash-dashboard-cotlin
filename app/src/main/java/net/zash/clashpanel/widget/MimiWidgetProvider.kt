@@ -16,7 +16,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Home-screen widget (1.4.0): status / live speeds / connections / egress at a glance, and directly
+ * Home-screen widget (1.4.0): status / live speeds / connections at a glance, and directly
  * operable — three mode tap zones (rule / global / direct) and a node-cycle button. Taps arrive as
  * broadcasts; the provider calls the backend itself (see [WidgetActions]) via goAsync, patches the
  * snapshot and re-renders. Data otherwise comes from the snapshot MainViewModel writes
@@ -128,7 +128,6 @@ class MimiWidgetProvider : AppWidgetProvider() {
             val meta = mutableListOf<String>()
             meta += context.getString(R.string.widget_conns, d.connCount)
             meta += "↓ " + fmtWidgetBytes(d.totalDown) + " · ↑ " + fmtWidgetBytes(d.totalUp)
-            if (d.egressText.isNotBlank()) meta += "🌐 " + d.egressText + if (d.egressIp.isNotBlank()) " " + d.egressIp else ""
             v.setTextViewText(R.id.widget_meta, meta.joinToString("   "))
 
             // mode buttons: current mode highlighted

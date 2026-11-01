@@ -10,12 +10,15 @@ A native Android dashboard written in **Kotlin + Jetpack Compose** for the `exte
 | --- | --- |
 | App name | Mimi Panel (Chinese 咪咪面板) |
 | Package | `com.mimipanel.andriod` (same for the GitHub and Huawei AppGallery builds; 1.2.10 and earlier used `net.zash.clashpanel`, so uninstall the old app first) |
-| Version | 1.4.0 (versionCode 1040000) |
+| Version | 1.4.1 (versionCode 1041000) |
 | Requirements | Android 8.0+ (minSdk 26, targetSdk 35); real-time frosted blur needs Android 12+ |
 | Permissions | `android.permission.INTERNET` only |
 | UI languages | Simplified Chinese, English (Settings → Language, can follow the system) |
 
 ## Changelog
+
+### 1.4.1
+- **Removed the network egress check**: the Overview egress card added in 1.4.0 and its code are gone (no more requests to ipwho.is / Cloudflare trace), the widget snapshot no longer carries egress region/IP fields, and the privacy policy drops the egress-check disclosure (policy version unchanged at 3 - this release only removes a feature and its disclosure, adding no new data processing). Everything else is unchanged: the interactive home-screen widget (mode / node switching) and the gentle review prompt remain.
 
 ### 1.4.0
 - New **Egress Check** on Overview: shows the device's current network egress IP (large), country/region/city, ISP/organization, request time and check time, with copy-IP and re-check (ipwho.is first, Cloudflare trace as fallback). When device traffic goes through a proxy, this is the proxy egress.

@@ -21,7 +21,7 @@ The following information is kept only in the App's private storage on your devi
 - App settings: theme, accent color, frosted glass and light effects, latency test parameters, log level, display and retention preferences, and UI language.
 - A copy of the wallpaper image you choose (only if you set a wallpaper).
 - Crash logs: when the App hits an uncaught exception, it records the error, app version, device model and OS version locally so you can troubleshoot. Crash logs are never uploaded automatically; they leave the device only when you tap "Copy", "Share" or "Save", and only to the clipboard, app or location you choose.
-- Home-screen widget snapshot (since 1.4.0): if you add the App's home-screen widget, the App keeps a separate local snapshot of the overview (backend label, connection status, live and total traffic, active connection count, and the region and IP of your latest egress check) solely for the widget to display on this device. It is never sent to any server.
+- Home-screen widget snapshot (since 1.4.0): if you add the App's home-screen widget, the App keeps a separate local snapshot of the overview (backend label, connection status, live and total traffic, active connection count) solely for the widget to display on this device. It is never sent to any server.
 
 Uninstalling the App deletes all of the above. You can also delete backends, remove the wallpaper and clear crash logs inside the App.
 
@@ -31,7 +31,6 @@ Uninstalling the App deletes all of the above. You can also delete backends, rem
 - Node latency tests are performed by your backend: the App only passes the test URL you set (default https://www.gstatic.com/generate_204) to the backend as a parameter and never visits that URL itself.
 - If your proxy configuration sets icon URLs for proxy groups, the App loads those icon images from those URLs.
 - Update check: only when you tap Settings > About > Version, the App asks GitHub (api.github.com) for the version number of this project's latest release; if there is a newer one and you choose Update, it opens the GitHub release page in the system browser. The request carries no personal information or device identifier; GitHub may log access details such as your IP address under its own privacy policy.
-- Egress check (since 1.4.0): only when you tap "Check / Check again" on the Overview page does the App contact ipwho.is to look up the device's current network egress, falling back to Cloudflare's trace service (www.cloudflare.com) on failure. Those services will see your egress IP address at that moment. The App sends them no backend address, secret or any other personal information, and the result is kept only on this device (in memory and in the widget snapshot above).
 - Apart from the above, the App sends no data to us or to any other server.
 
 ## 4. Use of device capabilities

@@ -22,8 +22,6 @@ data class WidgetData(
     val connCount: Int = 0,
     val totalUp: Long = 0,
     val totalDown: Long = 0,
-    val egressText: String = "",
-    val egressIp: String = "",
     val dark: Boolean = false,
     val updatedAt: Long = 0,
     // Interactive widget (1.4.0): current proxy mode, main selector group and its resolved node,
@@ -47,8 +45,6 @@ object WidgetSnapshot {
             .putInt("conns", d.connCount)
             .putLong("total_up", d.totalUp)
             .putLong("total_down", d.totalDown)
-            .putString("egress", d.egressText)
-            .putString("egress_ip", d.egressIp)
             .putBoolean("dark", d.dark)
             .putLong("updated", System.currentTimeMillis())
             .putString("mode", d.modeKey)
@@ -80,8 +76,6 @@ object WidgetSnapshot {
             connCount = sp.getInt("conns", 0),
             totalUp = sp.getLong("total_up", 0),
             totalDown = sp.getLong("total_down", 0),
-            egressText = sp.getString("egress", "") ?: "",
-            egressIp = sp.getString("egress_ip", "") ?: "",
             dark = sp.getBoolean("dark", false),
             updatedAt = sp.getLong("updated", 0),
             modeKey = sp.getString("mode", "") ?: "",

@@ -123,25 +123,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var memory by mutableLongStateOf(0); private set
     var memoryHistory by mutableStateOf<List<Long>>(List(60) { 0L }); private set
 
-    // ----- egress check (1.4.0) -----
-    // The device's own network egress (via the proxy when the device is proxied). Runs only on demand.
-    var egress by mutableStateOf<EgressInfo?>(null); private set
-    var egressChecking by mutableStateOf(false); private set
-    var egressFailed by mutableStateOf(false); private set
-
-    fun detectEgress() {
-        if (egressChecking || !privacyAgreed) return
-        egressChecking = true; egressFailed = false
-        viewModelScope.launch {
-            try {
-                egress = EgressChecker.check()
-                writeWidgetSnapshot(force = true)
-            } catch (e: CancellationException) { throw e } catch (e: Throwable) {
-                egressFailed = true
-            } finally { egressChecking = false }
-        }
-    }
-
     // ----- home-screen widget snapshot (1.4.0) -----
     private var lastWidgetWrite = 0L
 
@@ -170,8 +151,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 upSpeed = traffic.up, downSpeed = traffic.down,
                 connCount = activeConns.size,
                 totalUp = connTotalUp, totalDown = connTotalDown,
-                egressText = egress?.shortText ?: "",
-                egressIp = egress?.ip ?: "",
                 dark = night || accent == "black",
                 modeKey = config.mode,
                 groupName = mainGroup?.name ?: "",

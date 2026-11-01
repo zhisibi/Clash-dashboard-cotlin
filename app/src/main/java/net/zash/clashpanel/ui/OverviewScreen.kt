@@ -118,68 +118,6 @@ fun OverviewBody(vm: MainViewModel, top: Dp, bottom: Dp) {
                 BigStat(t("rules"), "${vm.rules.size}", Icons.AutoMirrored.Outlined.FormatListBulleted, null, Modifier.weight(1f))
             }
 
-            EgressCard(vm)
-    }
-}
-
-/** Egress check card (1.4.0): the device's own network exit — the proxy's exit when traffic is proxied. */
-@Composable
-private fun EgressCard(vm: MainViewModel) {
-    val ex = LocalExtra.current
-    val clip = androidx.compose.ui.platform.LocalClipboardManager.current
-    Card0(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Outlined.Public, null, Modifier.size(18.dp), tint = ex.accentUi)
-                Spacer(Modifier.width(8.dp))
-                Text(t("egress_title"), fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
-                if (vm.egressChecking) {
-                    CircularProgressIndicator(Modifier.size(18.dp), color = ex.accentUi, strokeWidth = 2.dp)
-                    Spacer(Modifier.width(8.dp))
-                    Text(t("egress_checking"), fontSize = 13.sp, color = ex.subtle)
-                } else {
-                    Button(
-                        onClick = { vm.detectEgress() },
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
-                    ) { Text(if (vm.egress == null) t("egress_detect") else t("egress_redetect"), fontSize = 14.sp) }
-                }
-            }
-            val info = vm.egress
-            if (info == null) {
-                Spacer(Modifier.height(8.dp))
-                Text(t("egress_desc"), fontSize = 13.sp, color = ex.subtle)
-                if (vm.egressFailed) {
-                    Spacer(Modifier.height(6.dp))
-                    Text(t("egress_failed"), fontSize = 13.sp, color = ex.bad)
-                }
-            } else {
-                Spacer(Modifier.height(10.dp))
-                Text(t("egress_ip"), fontSize = 12.sp, color = ex.subtle)
-                Text(info.ip, fontSize = 24.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Spacer(Modifier.height(8.dp))
-                EgressRow(t("egress_location"), info.locationText.ifBlank { info.countryCode.ifBlank { t("egress_country_unknown") } })
-                if (info.isp.isNotBlank()) EgressRow(t("egress_isp"), info.isp)
-                EgressRow(t("egress_latency"), t("egress_ms", info.latencyMs))
-                Spacer(Modifier.height(6.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(t("egress_checked_at", fmtClock(info.checkedAt)), fontSize = 12.sp, color = ex.subtle, modifier = Modifier.weight(1f))
-                    TextButton(onClick = {
-                        clip.setText(androidx.compose.ui.text.AnnotatedString(info.ip))
-                        vm.toast(t("copied"))
-                    }) { Text(t("egress_copy_ip"), fontSize = 13.sp) }
-                }
-                if (vm.egressFailed) Text(t("egress_failed"), fontSize = 13.sp, color = ex.bad)
-            }
-        }
-    }
-}
-
-@Composable
-private fun EgressRow(label: String, value: String) {
-    val ex = LocalExtra.current
-    Row(Modifier.padding(vertical = 3.dp)) {
-        Text(label, fontSize = 13.sp, color = ex.subtle, modifier = Modifier.width(76.dp))
-        Text(value, fontSize = 14.sp, color = ex.text, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
 }
 

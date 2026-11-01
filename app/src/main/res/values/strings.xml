@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Mimi Panel</string>
     <string name="widget_name">Mimi Panel widget</string>
-    <string name="widget_desc">Backend status, live speeds, connections and egress at a glance</string>
+    <string name="widget_desc">Backend status, live speeds and connections at a glance</string>
     <string name="widget_open_hint">Open Mimi Panel to get started</string>
     <string name="widget_connected">Connected</string>
     <string name="widget_disconnected">Not connected</string>
