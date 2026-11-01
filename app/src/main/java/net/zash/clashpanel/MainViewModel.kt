@@ -148,9 +148,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             net.zash.clashpanel.widget.WidgetData(
                 connected = connState == ConnState.Connected,
                 backendLabel = if (connState == ConnState.Connected) active?.display ?: "" else "",
-                upSpeed = traffic.up, downSpeed = traffic.down,
                 connCount = activeConns.size,
                 totalUp = connTotalUp, totalDown = connTotalDown,
+                memory = memory,
                 dark = night || accent == "black",
                 modeKey = config.mode,
                 groupName = mainGroup?.name ?: "",

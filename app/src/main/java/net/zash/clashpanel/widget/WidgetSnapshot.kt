@@ -6,7 +6,7 @@ import android.content.Context
 import android.content.Intent
 
 /**
- * Home-screen widget snapshot (1.4.0).
+ * Home-screen widget snapshot (1.4.0; totals + memory instead of live speeds since 1.4.14).
  *
  * The widget process cannot reach MainViewModel, so the view model throttles a small snapshot of the
  * overview into its own SharedPreferences file ("widget_snapshot", separate from the app settings file)
@@ -17,19 +17,17 @@ data class WidgetData(
     val hasData: Boolean = false,
     val connected: Boolean = false,
     val backendLabel: String = "",
-    val upSpeed: Long = 0,
-    val downSpeed: Long = 0,
     val connCount: Int = 0,
     val totalUp: Long = 0,
     val totalDown: Long = 0,
+    val memory: Long = 0,
     val dark: Boolean = false,
     val updatedAt: Long = 0,
-    // Interactive widget (1.4.0): current proxy mode, main selector group and its resolved node,
-    // plus a transient status line written by the provider after a tap action ("" = nothing to show).
+    // Interactive widget (1.4.0): current proxy mode, main selector group and its resolved node.
+    // Since 1.4.14 there is no result line: taps silently re-render to the new state.
     val modeKey: String = "",
     val groupName: String = "",
     val nodeText: String = "",
-    val msg: String = "",
 )
 
 object WidgetSnapshot {
@@ -40,27 +38,24 @@ object WidgetSnapshot {
             .putBoolean("has", true)
             .putBoolean("connected", d.connected)
             .putString("label", d.backendLabel)
-            .putLong("up", d.upSpeed)
-            .putLong("down", d.downSpeed)
             .putInt("conns", d.connCount)
             .putLong("total_up", d.totalUp)
             .putLong("total_down", d.totalDown)
+            .putLong("mem", d.memory)
             .putBoolean("dark", d.dark)
             .putLong("updated", System.currentTimeMillis())
             .putString("mode", d.modeKey)
             .putString("group", d.groupName)
             .putString("node", d.nodeText)
-            .putString("msg", d.msg)
             .apply()
     }
 
-    /** Provider-side patch after a tap action: updates only the interactive fields + status line. */
-    fun patch(ctx: Context, modeKey: String? = null, groupName: String? = null, nodeText: String? = null, msg: String? = null) {
+    /** Provider-side patch after a tap action: updates only the interactive fields. */
+    fun patch(ctx: Context, modeKey: String? = null, groupName: String? = null, nodeText: String? = null) {
         val e = ctx.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit()
         if (modeKey != null) e.putString("mode", modeKey)
         if (groupName != null) e.putString("group", groupName)
         if (nodeText != null) e.putString("node", nodeText)
-        if (msg != null) e.putString("msg", msg)
         e.putLong("updated", System.currentTimeMillis())
         e.apply()
     }
@@ -71,17 +66,15 @@ object WidgetSnapshot {
             hasData = sp.getBoolean("has", false),
             connected = sp.getBoolean("connected", false),
             backendLabel = sp.getString("label", "") ?: "",
-            upSpeed = sp.getLong("up", 0),
-            downSpeed = sp.getLong("down", 0),
             connCount = sp.getInt("conns", 0),
             totalUp = sp.getLong("total_up", 0),
             totalDown = sp.getLong("total_down", 0),
+            memory = sp.getLong("mem", 0),
             dark = sp.getBoolean("dark", false),
             updatedAt = sp.getLong("updated", 0),
             modeKey = sp.getString("mode", "") ?: "",
             groupName = sp.getString("group", "") ?: "",
             nodeText = sp.getString("node", "") ?: "",
-            msg = sp.getString("msg", "") ?: "",
         )
     }
 

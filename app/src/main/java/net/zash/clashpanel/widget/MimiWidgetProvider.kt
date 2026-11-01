@@ -16,12 +16,14 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Home-screen widget (1.4.0): status / live speeds / connections at a glance, and directly
- * operable — three mode tap zones (rule / global / direct) and a node-cycle button. Taps arrive as
- * broadcasts; the provider calls the backend itself (see [WidgetActions]) via goAsync, patches the
- * snapshot and re-renders. Data otherwise comes from the snapshot MainViewModel writes
- * (see [WidgetSnapshot]); when the app has never run it shows an "open Mimi Panel" placeholder.
- * Tapping the card opens the app; the refresh button re-reads the snapshot and re-renders.
+ * Home-screen widget (1.4.0; aligned with the HarmonyOS 1.4.14 cards): status / upload &
+ * download totals / memory at a glance, and directly operable mode tap zones (rule / global /
+ * direct). The node row is display only and there is no result line: a mode tap patches the
+ * snapshot and re-renders silently to the new state. Taps arrive as broadcasts; the provider
+ * calls the backend itself (see [WidgetActions]) via goAsync. Data otherwise comes from the
+ * snapshot MainViewModel writes (see [WidgetSnapshot]); when the app has never run it shows an
+ * "open Mimi Panel" placeholder. Tapping the card opens the app; the refresh button re-reads
+ * the snapshot and re-renders.
  */
 class MimiWidgetProvider : AppWidgetProvider() {
 
@@ -36,7 +38,6 @@ class MimiWidgetProvider : AppWidgetProvider() {
             ACTION_MODE_RULE -> switchMode(context, "rule")
             ACTION_MODE_GLOBAL -> switchMode(context, "global")
             ACTION_MODE_DIRECT -> switchMode(context, "direct")
-            ACTION_CYCLE_NODE -> cycleNode(context)
         }
     }
 
@@ -45,21 +46,7 @@ class MimiWidgetProvider : AppWidgetProvider() {
         Thread {
             try {
                 val ok = WidgetActions.setMode(context, mode)
-                if (ok) WidgetSnapshot.patch(context, modeKey = mode, msg = "")
-                else WidgetSnapshot.patch(context, msg = context.getString(R.string.widget_failed))
-                renderAll(context)
-            } finally { pending.finish() }
-        }.start()
-    }
-
-    private fun cycleNode(context: Context) {
-        val pending = goAsync()
-        Thread {
-            try {
-                val group = WidgetSnapshot.read(context).groupName
-                val next = WidgetActions.cycleNode(context, group)
-                if (next != null) WidgetSnapshot.patch(context, nodeText = next, msg = "")
-                else WidgetSnapshot.patch(context, msg = context.getString(R.string.widget_failed))
+                if (ok) WidgetSnapshot.patch(context, modeKey = mode)
                 renderAll(context)
             } finally { pending.finish() }
         }.start()
@@ -70,7 +57,6 @@ class MimiWidgetProvider : AppWidgetProvider() {
         const val ACTION_MODE_RULE = "net.zash.clashpanel.WIDGET_MODE_RULE"
         const val ACTION_MODE_GLOBAL = "net.zash.clashpanel.WIDGET_MODE_GLOBAL"
         const val ACTION_MODE_DIRECT = "net.zash.clashpanel.WIDGET_MODE_DIRECT"
-        const val ACTION_CYCLE_NODE = "net.zash.clashpanel.WIDGET_CYCLE_NODE"
 
         private fun renderAll(context: Context) {
             val mgr = AppWidgetManager.getInstance(context)
@@ -100,17 +86,15 @@ class MimiWidgetProvider : AppWidgetProvider() {
             v.setOnClickPendingIntent(R.id.widget_mode_rule, broadcastPending(context, 2, ACTION_MODE_RULE))
             v.setOnClickPendingIntent(R.id.widget_mode_global, broadcastPending(context, 3, ACTION_MODE_GLOBAL))
             v.setOnClickPendingIntent(R.id.widget_mode_direct, broadcastPending(context, 4, ACTION_MODE_DIRECT))
-            v.setOnClickPendingIntent(R.id.widget_cycle, broadcastPending(context, 5, ACTION_CYCLE_NODE))
-            v.setOnClickPendingIntent(R.id.widget_node, broadcastPending(context, 5, ACTION_CYCLE_NODE))
 
             if (!d.hasData) {
                 v.setTextViewText(R.id.widget_status, context.getString(R.string.widget_open_hint))
                 v.setTextColor(R.id.widget_dot, Color.GRAY)
-                v.setTextViewText(R.id.widget_speed_down, "—")
-                v.setTextViewText(R.id.widget_speed_up, "—")
+                v.setTextViewText(R.id.widget_total_down, "—")
+                v.setTextViewText(R.id.widget_total_up, "—")
+                v.setTextViewText(R.id.widget_total_mem, "—")
                 v.setTextViewText(R.id.widget_meta, "")
                 v.setTextViewText(R.id.widget_node, "—")
-                v.setTextViewText(R.id.widget_msg, "")
                 v.setTextViewText(R.id.widget_updated, "")
                 return v
             }
@@ -123,12 +107,10 @@ class MimiWidgetProvider : AppWidgetProvider() {
                     d.backendLabel,
                 ).filter { it.isNotBlank() }.joinToString(" · "),
             )
-            v.setTextViewText(R.id.widget_speed_down, "↓ " + fmtWidgetBytes(d.downSpeed) + "/s")
-            v.setTextViewText(R.id.widget_speed_up, "↑ " + fmtWidgetBytes(d.upSpeed) + "/s")
-            val meta = mutableListOf<String>()
-            meta += context.getString(R.string.widget_conns, d.connCount)
-            meta += "↓ " + fmtWidgetBytes(d.totalDown) + " · ↑ " + fmtWidgetBytes(d.totalUp)
-            v.setTextViewText(R.id.widget_meta, meta.joinToString("   "))
+            v.setTextViewText(R.id.widget_total_down, fmtWidgetBytes(d.totalDown))
+            v.setTextViewText(R.id.widget_total_up, fmtWidgetBytes(d.totalUp))
+            v.setTextViewText(R.id.widget_total_mem, if (d.memory > 0) fmtWidgetBytes(d.memory) else "—")
+            v.setTextViewText(R.id.widget_meta, context.getString(R.string.widget_conns, d.connCount))
 
             // mode buttons: current mode highlighted
             modeButton(v, R.id.widget_mode_rule, d.modeKey == "rule")
@@ -139,9 +121,6 @@ class MimiWidgetProvider : AppWidgetProvider() {
             v.setTextViewText(R.id.widget_mode_direct, context.getString(R.string.widget_mode_direct))
 
             v.setTextViewText(R.id.widget_node, d.nodeText.ifBlank { "—" })
-            v.setTextViewText(R.id.widget_cycle, context.getString(R.string.widget_switch))
-            v.setTextViewText(R.id.widget_msg, d.msg)
-            v.setViewVisibility(R.id.widget_msg, if (d.msg.isBlank()) View.GONE else View.VISIBLE)
             v.setTextViewText(
                 R.id.widget_updated,
                 if (d.updatedAt > 0) SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(d.updatedAt)) else "",
