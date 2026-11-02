@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -643,7 +644,7 @@ private fun PanelPage(vm: MainViewModel) {
 }
 
 @Composable
-fun LineChart(series: List<Pair<List<Float>, Color>>, modifier: Modifier) {
+fun LineChart(series: List<Pair<List<Float>, Color>>, modifier: Modifier, mirror: Boolean = false, bars: Boolean = false, faint: Boolean = false) {
     val grid = MaterialTheme.colorScheme.outlineVariant
     Canvas(modifier) {
         val max = (series.flatMap { it.first }.maxOrNull() ?: 0f).coerceAtLeast(1f) * 1.15f
@@ -651,21 +652,43 @@ fun LineChart(series: List<Pair<List<Float>, Color>>, modifier: Modifier) {
             val y = size.height * i / 4f
             drawLine(grid, Offset(0f, y), Offset(size.width, y), 1f)
         }
-        series.forEach { (data, color) ->
-            if (data.size < 2) return@forEach
+        series.forEachIndexed { si, (data, color) ->
+            if (data.size < 2) return@forEachIndexed
+            // mirror mode (overview speed): zero line centered, first series (download) above it,
+            // second (upload) below it as its negative, both on the shared scale above
+            val mirrored = mirror && si < 2
+            val below = mirrored && si == 1
+            val midY = size.height / 2f
             val step = size.width / (data.size - 1)
+            fun yOf(v: Float): Float = if (mirrored) midY + (if (below) 1f else -1f) * (v / max) * midY else size.height - (v / max) * size.height
+            if (bars) {
+                val slot = size.width / data.size
+                val bw = (slot * 0.62f).coerceAtLeast(1f)
+                for (i in data.indices) {
+                    val y = yOf(data[i])
+                    val top = if (mirrored) minOf(y, midY) else y
+                    val bottom = if (mirrored) maxOf(y, midY) else size.height
+                    if (bottom - top <= 0f) continue
+                    drawRect(color.copy(alpha = 0.85f), topLeft = Offset(i * slot + (slot - bw) / 2f, top), size = Size(bw, bottom - top))
+                }
+                return@forEachIndexed
+            }
             val path = Path()
             data.forEachIndexed { i, v ->
-                val x = i * step; val y = size.height - (v / max) * size.height
+                val x = i * step; val y = yOf(v)
                 if (i == 0) path.moveTo(x, y) else {
-                    val px = (i - 1) * step; val py = size.height - (data[i - 1] / max) * size.height
+                    val px = (i - 1) * step; val py = yOf(data[i - 1])
                     val cx = (px + x) / 2
                     path.cubicTo(cx, py, cx, y, x, y)
                 }
             }
-            val fill = Path().apply { addPath(path); lineTo(size.width, size.height); lineTo(0f, size.height); close() }
-            drawPath(fill, Brush.verticalGradient(listOf(color.copy(alpha = 0.25f), color.copy(alpha = 0f))))
-            drawPath(path, color, style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round))
+            val baseY = if (mirrored) midY else size.height
+            val fill = Path().apply { addPath(path); lineTo(size.width, baseY); lineTo(0f, baseY); close() }
+            val brush = if (!mirrored) Brush.verticalGradient(listOf(color.copy(alpha = if (faint) 0.12f else 0.25f), color.copy(alpha = 0f)))
+                else if (below) Brush.verticalGradient(listOf(color.copy(alpha = 0f), color.copy(alpha = 0.25f)), startY = midY, endY = size.height)
+                else Brush.verticalGradient(listOf(color.copy(alpha = 0.25f), color.copy(alpha = 0f)), startY = 0f, endY = midY)
+            drawPath(fill, brush)
+            drawPath(path, if (faint) color.copy(alpha = 0.5f) else color, style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round))
         }
     }
 }

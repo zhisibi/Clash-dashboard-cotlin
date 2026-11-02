@@ -46,8 +46,8 @@ fun OverviewBody(vm: MainViewModel, top: Dp, bottom: Dp) {
 
             // speed
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                BigStat(t("upload"), fmtSpeed(vm.traffic.up), Icons.Outlined.ArrowUpward, ex.up, Modifier.weight(1f))
-                BigStat(t("download"), fmtSpeed(vm.traffic.down), Icons.Outlined.ArrowDownward, ex.down, Modifier.weight(1f))
+                BgStat(t("upload"), fmtSpeed(vm.traffic.up), Icons.Outlined.ArrowUpward, ex.up, vm.trafficHistory.map { it.up.toFloat() }, ex.up, Modifier.weight(1f))
+                BgStat(t("download"), fmtSpeed(vm.traffic.down), Icons.Outlined.ArrowDownward, ex.down, vm.trafficHistory.map { it.down.toFloat() }, ex.down, Modifier.weight(1f))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 BigStat(t("upload_total"), fmtBytes(vm.connTotalUp), Icons.Outlined.CloudUpload, null, Modifier.weight(1f))
@@ -55,11 +55,11 @@ fun OverviewBody(vm: MainViewModel, top: Dp, bottom: Dp) {
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 BigStat(t("active_conns"), "${vm.activeConns.size}", Icons.Outlined.Link, null, Modifier.weight(1f))
-                BigStat(t("memory_usage"), fmtBytes(vm.memory), Icons.Outlined.Memory, null, Modifier.weight(1f))
+                BgStat(t("memory_usage"), fmtBytes(vm.memory), Icons.Outlined.Memory, null, vm.memoryHistory.map { it.toFloat() }, ex.accentUi, Modifier.weight(1f))
             }
 
-            // traffic chart (1.3.4: same height as the memory card, both smaller - legends moved into the
-            // title row and both charts are 104 dp high, so the two cards match exactly)
+            // traffic chart: mirrored bars (download up, upload down), 80 dp; the memory curve moved
+            // into the memory stat card as its background, so there is no separate memory card anymore
             Card0(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(14.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -68,21 +68,10 @@ fun OverviewBody(vm: MainViewModel, top: Dp, bottom: Dp) {
                         Text(t("peak", fmtSpeed(vm.trafficHistory.maxOfOrNull { maxOf(it.up, it.down) } ?: 0)), fontSize = 12.sp, color = ex.subtle)
                     }
                     Spacer(Modifier.height(8.dp))
-                    LineChart(listOf(vm.trafficHistory.map { it.up.toFloat() } to ex.up, vm.trafficHistory.map { it.down.toFloat() } to ex.down), Modifier.fillMaxWidth().height(104.dp))
+                    LineChart(listOf(vm.trafficHistory.map { it.down.toFloat() } to ex.down, vm.trafficHistory.map { it.up.toFloat() } to ex.up), Modifier.fillMaxWidth().height(80.dp), mirror = true, bars = true)
                 }
             }
 
-            // memory chart (1.3.4: same structure and height as the traffic card)
-            Card0(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(14.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(t("memory"), fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
-                        Text(fmtBytes(vm.memory), fontSize = 12.sp, color = ex.subtle)
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    LineChart(listOf(vm.memoryHistory.map { it.toFloat() } to ex.accentUi), Modifier.fillMaxWidth().height(104.dp))
-                }
-            }
 
             // top hosts
             val top = remember(vm.activeConns) {
@@ -133,6 +122,28 @@ private fun BigStat(title: String, value: String, icon: ImageVector, color: Colo
             }
             Spacer(Modifier.height(6.dp))
             Text(value, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = color ?: MaterialTheme.colorScheme.onSurface, maxLines = 1)
+        }
+    }
+}
+
+/** BigStat with a history curve as the card background (line mode, faint); same size and layout as BigStat */
+@Composable
+private fun BgStat(title: String, value: String, icon: ImageVector, color: Color?, bg: List<Float>, bgColor: Color, modifier: Modifier) {
+    val ex = LocalExtra.current
+    Card0(modifier) {
+        Box {
+            if (bg.isNotEmpty()) {
+                LineChart(listOf(bg to bgColor), Modifier.fillMaxWidth().height(88.dp), faint = true)
+            }
+            Column(Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(icon, null, Modifier.size(16.dp), tint = color ?: ex.subtle)
+                    Spacer(Modifier.width(6.dp))
+                    Text(title, fontSize = 13.sp, color = ex.subtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                Spacer(Modifier.height(6.dp))
+                Text(value, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = color ?: MaterialTheme.colorScheme.onSurface, maxLines = 1)
+            }
         }
     }
 }
