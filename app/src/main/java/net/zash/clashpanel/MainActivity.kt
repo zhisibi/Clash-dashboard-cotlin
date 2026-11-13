@@ -408,6 +408,15 @@ private fun ConsentScreen(vm: MainViewModel, onExit: () -> Unit) {
             AppIcon(72.dp)
             Text(t("consent_welcome"), Modifier.padding(top = 16.dp), fontSize = 24.sp, fontWeight = FontWeight.Medium, color = p.text)
             Text(t("consent_intro"), Modifier.padding(top = 10.dp), fontSize = 14.sp, lineHeight = 22.sp, color = p.subtle)
+            // Prominent positioning statement (1.4.19): shown above the document links and
+            // the Agree button on the consent screen, and mirrored at the end of Article 1
+            // of the User Agreement.
+            Text(
+                t("consent_statement"),
+                Modifier.padding(top = 14.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                    .background(p.accent.copy(alpha = 0.10f)).padding(14.dp),
+                fontSize = 13.5.sp, lineHeight = 21.sp, color = p.text,
+            )
             Column(Modifier.padding(top = 16.dp).fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(p.chip).padding(16.dp)) {
                 Bullet(t("consent_p1")); Bullet(t("consent_p2")); Bullet(t("consent_p3")); Bullet(t("consent_p4"))
             }

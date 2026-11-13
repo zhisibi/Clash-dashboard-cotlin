@@ -37,7 +37,7 @@ class Prefs(ctx: Context) {
         set(v) = sp.edit().putString("theme", v).apply()
 
     var testUrl: String
-        get() = sp.getString("test_url", "https://www.gstatic.com/generate_204")!!
+        get() = sp.getString("test_url", "https://connect.rom.miui.com/generate_204")!!
         set(v) = sp.edit().putString("test_url", v).apply()
 
     var testTimeout: Int

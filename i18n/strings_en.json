@@ -368,5 +368,6 @@
   "egress_copy_ip": "Copy IP",
   "egress_country_unknown": "Unknown region",
   "egress_ms": "{0} ms",
-  "widget_updated": "Updated {0}"
+  "widget_updated": "Updated {0}",
+  "consent_statement": "This app is a backend management tool, only for connecting to and managing compatible-core backends that you deploy yourself. The App provides no proxy service, servers, nodes or subscription content. Please make sure you have the legal right to use the backends you connect to, and comply with the laws and regulations of your location."
 }

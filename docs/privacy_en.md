@@ -44,7 +44,7 @@ When the App hits an uncaught exception, it generates a crash log locally so you
 
 Except as listed below, the App's network requests go only to the backend addresses you configure, to read and change the proxy core's status, configuration, connections, logs and rules:
 
-- Node latency tests are performed by your backend: the App only passes the test URL you set (default https://www.gstatic.com/generate_204) to the backend as a parameter and never visits that URL itself.
+- Node latency tests are performed by your backend: the App only passes the test URL you set (default https://connect.rom.miui.com/generate_204) to the backend as a parameter and never visits that URL itself.
 - Icon loading: the icons shown for policy groups use URLs taken from the icon field in the data your backend returns. Such a URL can point anywhere, and the App loads the image from it. The server hosting that icon will therefore learn your device's IP address and the time of the request. If you do not want such requests, do not set icons for policy groups in your backend configuration.
 - Update check (depends on the distribution channel):
   - GitHub channel build: only when you tap Settings > About > Version, the App asks GitHub (api.github.com) for the version number of this project's latest release; if there is a newer one and you choose Update, it opens the GitHub release page in the system browser. The request carries no personal information or device identifier; GitHub may log access details such as your IP address under its own privacy policy.
