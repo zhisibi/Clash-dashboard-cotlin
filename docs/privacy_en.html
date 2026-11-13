@@ -173,13 +173,16 @@
 
 <h1 id="mimi-panel-privacy-policy-android">Mimi Panel Privacy Policy
 (Android)</h1>
-<p>Last updated: October 10, 2026 Effective: October 10, 2026</p>
+<p>Last updated: November 13, 2026 Effective: November 13, 2026 Policy
+version: 5</p>
 <p>Mimi Panel ("the App") is provided by the developer Zhang Shibo ("we"
 or "us"). The App is a control panel that runs locally on your device
 and connects to the external-controller API of a mihomo-compatible proxy
 core that you deploy yourself. We take the protection of your personal
 information seriously; please read this policy carefully before using
-the App.</p>
+the App. The three appendices at the end of this policy (Personal
+Information Collection List, Third-Party Sharing List and App
+Permissions) form part of this policy.</p>
 <p>The Chinese version of this policy (docs/privacy.md) is the governing
 version; this English version is provided for convenience.</p>
 <h2 id="1-we-do-not-collect-your-personal-information">1. We do not
@@ -192,54 +195,111 @@ identifiers, usage statistics or behavioral data. We run no servers and
 perform no analytics or ad tracking of any kind.</li>
 <li>The App contains no third-party SDKs (no analytics, advertising,
 push or crash-reporting SDKs).</li>
+<li>All data processing the App needs happens locally on your device, or
+between the App and the backend you configure yourself. See Appendix 1
+for an item-by-item list.</li>
 </ul>
-<h2 id="2-information-stored-on-your-device">2. Information stored on
-your device</h2>
-<p>The following information is kept only in the App's private storage
-on your device (system SharedPreferences and the app's private
-directory; Android auto backup is turned off for the App, so this data
-is never backed up to the cloud) and is never sent to us or any third
-party:</p>
+<h2 id="2-information-stored-on-your-device-and-how-long-it-is-kept">2.
+Information stored on your device, and how long it is kept</h2>
+<p>The following information is kept only in the App's storage on your
+device and is never sent to us:</p>
 <ul>
 <li>Backend details you enter: name, protocol (HTTP/HTTPS), host, port,
-path prefix and access secret.</li>
-<li>App settings: theme, accent color, frosted glass and light effects,
-latency test parameters, log level, display and retention preferences,
-and UI language.</li>
+path prefix and access secret. They are stored in the App's sandboxed
+storage (system SharedPreferences), which the Android sandbox isolates
+from other apps. The secret is stored in plain form within that
+sandboxed storage; Android auto backup is turned off for the App
+(allowBackup=false), so it is never backed up to the cloud. Keep your
+device and secret safe: anyone who learns the secret may be able to
+control your backend.</li>
+<li>App settings: theme, accent color, UI language, frosted glass and
+light effects, latency test parameters, log level, display and retention
+preferences, also stored in the App's sandboxed storage.</li>
 <li>A copy of the wallpaper image you choose (only if you set a
-wallpaper).</li>
-<li>Crash logs: when the App hits an uncaught exception, it records the
-error, app version, device model and OS version locally so you can
-troubleshoot. Crash logs are never uploaded automatically; they leave
-the device only when you tap "Copy", "Share" or "Save", and only to the
-clipboard, app or location you choose.</li>
+wallpaper), stored in the App's private directory.</li>
+<li>Connections and logs data: the connection list, live and total
+traffic, memory usage and the backend log stream are data coming from
+your backend. They are shown and used in memory only, never written to
+disk, and released when you disconnect or exit the App.</li>
+<li>Exporting: the App can export log text only (through the system
+share sheet or "Save as", to a destination you choose). Backend
+configurations, including hosts and secrets, cannot be exported.</li>
 </ul>
-<p>Uninstalling the App deletes all of the above. You can also delete
-backends, remove the wallpaper and clear crash logs inside the App.</p>
-<h2 id="3-network-access">3. Network access</h2>
+<p>Retention: backend details and app settings are kept until you delete
+them in the App or uninstall the App; the wallpaper copy until you
+remove the wallpaper or uninstall. The exception is the crash-log mirror
+in the public Downloads folder, which uninstalling does not remove — see
+below.</p>
+<h3 id="home-screen-widget-snapshot">Home-screen widget snapshot</h3>
+<p>If you add the App's home-screen widget, the App keeps a separate
+local snapshot (its own SharedPreferences file, widget_snapshot)
+containing: the backend label, connection status, total upload and
+download traffic, memory usage, active connection count, current mode,
+the main policy group's name and the current node's name. It is used
+solely for the widget to display on this device and is never sent to any
+server.</p>
+<h3 id="crash-logs">Crash logs</h3>
+<p>When the App hits an uncaught exception, it generates a crash log
+locally so you can troubleshoot. Each log contains: the time of the
+crash, the App version, the device manufacturer and model, the OS
+version, the application binary interface (ABI), the exception class
+name, the thread name and the full exception stack trace.</p>
 <ul>
-<li>The App requests the network permission
-(android.permission.INTERNET), the only permission it requests. Except
-as listed below, network requests go only to the backend addresses you
-configure, to read and change the proxy core's status, configuration,
-connections, logs and rules.</li>
+<li>The internal copy is kept in the App's private directory. Only the
+newest 20 logs are kept; older ones are deleted automatically.</li>
+<li>So a log can still be retrieved when the App itself will not open,
+the same log is also mirrored to the public Downloads folder,
+Download/MimiPanel. The mirror is likewise capped at the newest 20
+copies.</li>
+<li>Please note: Download/MimiPanel is in public storage, and
+<strong>uninstalling the App does not delete these mirrored
+files</strong>. To delete them, open the Download/MimiPanel folder in a
+file manager and delete them manually. Other apps with storage access on
+the device can read that folder, so check a log's contents before
+sharing it.</li>
+<li>Crash logs are never uploaded automatically. They leave the device
+only when you tap "Copy", "Share" or "Save", and only to the clipboard,
+app or location you choose.</li>
+</ul>
+<h2 id="3-network-access">3. Network access</h2>
+<p>Except as listed below, the App's network requests go only to the
+backend addresses you configure, to read and change the proxy core's
+status, configuration, connections, logs and rules:</p>
+<ul>
 <li>Node latency tests are performed by your backend: the App only
 passes the test URL you set (default <a
 href="https://www.gstatic.com/generate_204">https://www.gstatic.com/generate_204</a>)
 to the backend as a parameter and never visits that URL itself.</li>
-<li>If your proxy configuration sets icon URLs for proxy groups, the App
-loads those icon images from those URLs.</li>
-<li>Update check: only when you tap Settings &gt; About &gt; Version,
-the App asks GitHub (api.github.com) for the version number of this
-project's latest release; if there is a newer one and you choose Update,
-it opens the GitHub release page in the system browser. The request
-carries no personal information or device identifier; GitHub may log
-access details such as your IP address under its own privacy
+<li>Icon loading: the icons shown for policy groups use URLs taken from
+the icon field in the data your backend returns. Such a URL can point
+anywhere, and the App loads the image from it. The server hosting that
+icon will therefore learn your device's IP address and the time of the
+request. If you do not want such requests, do not set icons for policy
+groups in your backend configuration.</li>
+<li>Update check (depends on the distribution channel):
+<ul>
+<li>GitHub channel build: only when you tap Settings &gt; About &gt;
+Version, the App asks GitHub (api.github.com) for the version number of
+this project's latest release; if there is a newer one and you choose
+Update, it opens the GitHub release page in the system browser. The
+request carries no personal information or device identifier; GitHub may
+log access details such as your IP address under its own privacy
 policy.</li>
+<li>Huawei AppGallery channel build: the App does not contact GitHub.
+Tapping the update check opens this App's page in Huawei AppGallery
+directly, and updates are delivered by AppGallery.</li>
+</ul></li>
+<li>Home-screen widget networking: if you added the App's home-screen
+widget, tapping one of its mode buttons (Rule / Global / Direct) makes
+the widget process read the backend address and secret the App has saved
+and send a mode-switch request (PATCH /configs) to your own backend, so
+the mode can be changed while the App is not open. Apart from this, the
+widget contacts no other server.</li>
 <li>Apart from the above, the App sends no data to us or to any other
 server.</li>
 </ul>
-<h2 id="4-use-of-device-capabilities">4. Use of device capabilities</h2>
+<h2 id="4-use-of-device-capabilities-and-permissions">4. Use of device
+capabilities and permissions</h2>
 <ul>
 <li>Gravity sensor: used only when you turn on "Immersive Light → Follow
 device tilt", to adjust the direction of UI highlights. The data is used
@@ -254,23 +314,181 @@ picker (Storage Access Framework) and share sheet, and only for log
 content you choose to export.</li>
 <li>Clipboard: written only when you tap "Copy". The App never reads the
 clipboard.</li>
+<li>The system permissions the App requests, and what each is for, are
+listed in Appendix 3.</li>
 </ul>
 <h2 id="5-your-rights">5. Your rights</h2>
 <p>You can view, change or delete your saved backends and settings in
 the App at any time. You can withdraw consent under "Settings → About →
 Withdraw privacy consent"; the App then exits and asks for consent again
-on the next launch. You can also uninstall the App to delete all local
-data.</p>
+on the next launch. You can delete the internal crash logs (Settings →
+Crash Logs); for the mirrored logs in the public Downloads folder,
+delete them manually in a file manager as described in Section 2.
+Uninstalling the App deletes everything in the App's sandbox and private
+directories (except the Downloads mirrors). To exercise any other
+statutory rights regarding your personal information, contact us at the
+email in Section 8.</p>
 <h2 id="6-minors">6. Minors</h2>
 <p>The App is intended for users who can deploy and manage a proxy core.
 It is not directed at minors and collects no personal information from
 minors.</p>
 <h2 id="7-changes-to-this-policy">7. Changes to this policy</h2>
-<p>If this policy changes, we will update it in the App and on this
-page, and ask for your consent again where required.</p>
+<p>If this policy changes, we will update it in the App and on this page
+and increase the policy version number. On your next launch of the App
+after a change, we will ask for your consent again; if you do not agree,
+you may stop using and uninstall the App.</p>
 <h2 id="8-contact-us">8. Contact us</h2>
 <p>If you have any questions about this policy, contact us by the
-developer's email: <a
-href="mailto:zhisibi@163.com">zhisibi@163.com</a></p>
+developer's email: <a href="mailto:zhisibi@163.com">zhisibi@163.com</a>.
+You can also give feedback in the QQ group: 1127250124.</p>
+<h2 id="appendix-1-personal-information-collection-list">Appendix 1:
+Personal Information Collection List</h2>
+<p>The App collects no account, identity or device-identifier
+information. The table below lists the data the App must process locally
+for it to work. All of it is processed only on your device and is never
+uploaded to the developer or any third party:</p>
+<table>
+<thead>
+<tr>
+<th>Data item</th>
+<th>Purpose</th>
+<th>How and where it is processed</th>
+<th>Retention</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Backend details (name, protocol, host, port, path prefix, access
+secret)</td>
+<td>Connecting to and managing the backend you configure</td>
+<td>Stored locally in the App's sandbox (SharedPreferences); the secret
+is stored in plain form; system auto backup is off</td>
+<td>Until you delete the backend or uninstall the App</td>
+</tr>
+<tr>
+<td>App settings (theme, language, latency test parameters, log level,
+etc.)</td>
+<td>Remembering your preferences</td>
+<td>Stored locally in the App's sandbox (SharedPreferences)</td>
+<td>Until you change them, reset to defaults, or uninstall the App</td>
+</tr>
+<tr>
+<td>Wallpaper image copy</td>
+<td>Displaying the wallpaper you set</td>
+<td>Stored locally in the App's private directory</td>
+<td>Until you remove the wallpaper or uninstall the App</td>
+</tr>
+<tr>
+<td>Widget snapshot (backend label, connection status, total
+upload/download traffic, memory usage, connection count, mode, group
+name, node name)</td>
+<td>Displayed by the home-screen widget on this device</td>
+<td>Stored locally in a separate SharedPreferences file
+(widget_snapshot)</td>
+<td>Overwritten as the overview refreshes; deleted when the App is
+uninstalled</td>
+</tr>
+<tr>
+<td>Crash logs (time, App version, device manufacturer/model, OS
+version, ABI, exception class/thread name, full stack trace)</td>
+<td>For you to troubleshoot crashes yourself</td>
+<td>One copy in the App's private directory; a mirror copy in the public
+Download/MimiPanel folder</td>
+<td>Both locations keep only the newest 20; the internal copy is deleted
+on uninstall, the mirror must be deleted manually in a file manager</td>
+</tr>
+<tr>
+<td>Connections and logs data (connection list, traffic, backend log
+stream, etc.)</td>
+<td>Showing backend status in real time</td>
+<td>Used in memory only, never written to disk</td>
+<td>Released when you disconnect or exit the App</td>
+</tr>
+</tbody>
+</table>
+<h2 id="appendix-2-third-party-sharing-list">Appendix 2: Third-Party
+Sharing List</h2>
+<ul>
+<li>The App contains no third-party SDKs of any kind (no analytics,
+advertising, push or crash-reporting SDKs). We run no servers that
+receive your data, and we do not share, transfer or sell your personal
+information to any third party.</li>
+<li>The following are accesses to external services that happen only
+when you trigger them. The data involved is handled by the other party
+under its own privacy policy, and is not personal information shared by
+the App with third parties:</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>External service</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Update check (GitHub channel build only)</td>
+<td>GitHub (api.github.com and the release page)</td>
+<td>Triggered when you tap the update check; the request carries no
+personal information or device identifier; GitHub may log access details
+such as your IP</td>
+</tr>
+<tr>
+<td>Update check (Huawei AppGallery channel build only)</td>
+<td>Huawei AppGallery</td>
+<td>Triggered when you tap the update check; opens the App's AppGallery
+page and updates are delivered by AppGallery; this build does not
+contact GitHub</td>
+</tr>
+<tr>
+<td>Loading policy-group icons</td>
+<td>The server hosting the icon URL (determined by your backend
+configuration)</td>
+<td>It learns your device IP and the request time; avoid it by not
+setting icons in the backend configuration</td>
+</tr>
+<tr>
+<td>Connecting to your own backend</td>
+<td>The backend you deploy yourself</td>
+<td>This is the App's core function; the destination is configured by
+you and is not third-party sharing</td>
+</tr>
+</tbody>
+</table>
+<h2 id="appendix-3-app-permissions">Appendix 3: App Permissions</h2>
+<table>
+<thead>
+<tr>
+<th>Permission</th>
+<th>Purpose</th>
+<th>When it is used</th>
+<th>Effect of refusing or disabling it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>INTERNET</td>
+<td>Communicating with the backend you configure; loading icon images
+per the backend configuration; for the GitHub channel build, checking
+GitHub for updates</td>
+<td>Whenever the App's network features are used</td>
+<td>The App cannot connect to any backend and its core functions are
+unavailable</td>
+</tr>
+<tr>
+<td>WRITE_EXTERNAL_STORAGE (declared only on Android 9 and below, i.e.
+API 28 and lower, and capped by the system at maxSdkVersion 28)</td>
+<td>Writing crash-log mirrors into the public Download/MimiPanel folder
+so logs can be retrieved when the App will not open</td>
+<td>Only when the App writes a crash log after an uncaught
+exception</td>
+<td>No effect on the main functions; only the Downloads mirror is not
+created on old Android versions. On Android 10 and later, mirrors are
+written through the system media store and this permission is neither
+needed nor declared</td>
+</tr>
+</tbody>
+</table>
 </body>
 </html>

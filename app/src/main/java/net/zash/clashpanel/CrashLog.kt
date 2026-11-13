@@ -1,6 +1,7 @@
 package net.zash.clashpanel
 
 import android.app.Application
+import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
 import android.os.Build
@@ -22,6 +23,9 @@ class MimiApp : Application() {
 }
 
 object CrashLog {
+    /** Internal copies and Download mirrors alike keep only the newest [KEEP] logs. */
+    private const val KEEP = 20
+
     private fun dir(ctx: Context) = File(ctx.filesDir, "crash").apply { mkdirs() }
 
     fun install(ctx: Context) {
@@ -55,8 +59,8 @@ object CrashLog {
         // itself will not open, the user can still grab the log with any file manager.
         // Best effort only — a mirror failure must never disturb the crash flow.
         runCatching { mirrorToDownloads(ctx, f.name, text) }
-        // keep latest 20
-        list(ctx).drop(20).forEach { it.delete() }
+        // keep latest KEEP
+        list(ctx).drop(KEEP).forEach { it.delete() }
         ctx.getSharedPreferences("crash", Context.MODE_PRIVATE).edit().putBoolean("unseen", true).commit()
     }
 
@@ -65,6 +69,10 @@ object CrashLog {
      * Downloads insert needs no permission; on API 26-28 the public Downloads directory is
      * written directly (WRITE_EXTERNAL_STORAGE, manifest-capped at API 28). Any failure
      * (permission denied, volume missing) propagates to the caller's runCatching.
+     * The mirror lives in public storage and survives uninstall, so it is pruned to the
+     * newest [KEEP] copies as well (privacy policy 5th ed.): on API 29+ only this app's
+     * own MediaStore entries are visible to us, which is exactly the set we may delete;
+     * on API 26-28 the folder is pruned through the file API.
      */
     private fun mirrorToDownloads(ctx: Context, name: String, text: String) {
         if (Build.VERSION.SDK_INT >= 29) {
@@ -76,11 +84,40 @@ object CrashLog {
             val uri = ctx.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
                 ?: error("MediaStore insert returned null")
             ctx.contentResolver.openOutputStream(uri, "wt")!!.use { it.write(text.toByteArray()) }
+            pruneMirrorMediaStore(ctx)
         } else {
             @Suppress("DEPRECATION")
             val pub = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             val folder = File(pub, "MimiPanel").apply { mkdirs() }
             File(folder, name).writeText(text)
+            folder.listFiles()
+                ?.filter { it.name.startsWith("crash-") && it.name.endsWith(".txt") }
+                ?.sortedByDescending { it.name }
+                ?.drop(KEEP)
+                ?.forEach { it.delete() }
+        }
+    }
+
+    /** API 29+: deletes this app's oldest mirrored crash logs beyond [KEEP]. */
+    private fun pruneMirrorMediaStore(ctx: Context) {
+        val cr = ctx.contentResolver
+        val names = mutableListOf<Pair<Long, String>>()
+        val proj = arrayOf(MediaStore.Downloads._ID, MediaStore.Downloads.DISPLAY_NAME)
+        cr.query(
+            MediaStore.Downloads.EXTERNAL_CONTENT_URI, proj,
+            MediaStore.Downloads.RELATIVE_PATH + " = ?",
+            arrayOf(Environment.DIRECTORY_DOWNLOADS + "/MimiPanel/"), null,
+        )?.use { c ->
+            val idCol = c.getColumnIndexOrThrow(MediaStore.Downloads._ID)
+            val nameCol = c.getColumnIndexOrThrow(MediaStore.Downloads.DISPLAY_NAME)
+            while (c.moveToNext()) {
+                val n = c.getString(nameCol) ?: continue
+                if (n.startsWith("crash-") && n.endsWith(".txt")) names += c.getLong(idCol) to n
+            }
+        }
+        // file names embed the timestamp, so name order is chronological
+        names.sortedByDescending { it.second }.drop(KEEP).forEach { (id, _) ->
+            cr.delete(ContentUris.withAppendedId(MediaStore.Downloads.EXTERNAL_CONTENT_URI, id), null, null)
         }
     }
 

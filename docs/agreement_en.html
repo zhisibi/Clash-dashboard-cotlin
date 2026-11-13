@@ -172,14 +172,14 @@
 <body>
 
 <h1 id="mimi-panel-user-agreement">Mimi Panel User Agreement</h1>
-<p>Last updated: October 10, 2026 Effective: October 10, 2026</p>
+<p>Last updated: November 13, 2026 Effective: November 13, 2026</p>
 <p>Welcome to Mimi Panel ("the App"), provided by the developer Zhang
 Shibo ("we" or "us"). Please read this agreement carefully before using
 the App. By tapping "Agree" or using the App, you confirm that you have
 read and accept this agreement and the Mimi Panel Privacy Policy.</p>
 <p>The Chinese version of this agreement (docs/agreement.md) is the
 governing version; this English version is provided for convenience.</p>
-<h2 id="1-the-service">1. The service</h2>
+<h2 id="1-the-service-and-its-scope">1. The service and its scope</h2>
 <p>The App is a control panel. Through the RESTful external-controller
 API of a mihomo-compatible proxy core that you deploy yourself, it lets
 you view and manage the core's status, proxy groups and nodes,
@@ -187,44 +187,93 @@ connections, logs, rules and parts of its configuration.</p>
 <p>The App contains no proxy core and provides no proxy servers, nodes,
 subscriptions or network acceleration, and it does not create proxy or
 VPN connections on your device. All of its features depend on the
-backend you configure.</p>
-<h2 id="2-acceptable-use">2. Acceptable use</h2>
+backend you configure. The nodes, policy groups and subscription
+information shown in the App all come from the backend you connect to;
+the App does not produce or provide that content.</p>
+<h2 id="2-acceptable-use-and-compliance-commitments">2. Acceptable use
+and compliance commitments</h2>
 <ul>
-<li>Connect only to backends that you own or are authorized to manage,
-and keep backend addresses and secrets safe.</li>
-<li>Comply with the applicable laws and regulations of the People's
-Republic of China, and do not use the App or the services it manages for
-any illegal activity.</li>
+<li>Connect only to backends that you own or are authorized to
+manage.</li>
+<li>Comply with the laws and regulations of your place of residence and
+of the People's Republic of China. Do not use the App or the services it
+manages to evade national network regulation, to infringe the lawful
+rights and interests of others, or for any other illegal activity.</li>
+<li>You are solely responsible for the source of the backend you connect
+to and for the legality of the nodes and subscription content it
+provides. Any dispute, loss or legal liability arising from the backend
+or its content is yours alone.</li>
+<li>Keep backend addresses and secrets safe. The consequences of poor
+safekeeping or disclosure of a secret are borne by you.</li>
 <li>Actions you take on a backend through the App (such as switching
 nodes, changing configuration, closing connections, or restarting or
 upgrading the core) are your own decisions, and you bear their
 consequences.</li>
 </ul>
-<h2 id="3-intellectual-property">3. Intellectual property</h2>
+<h2 id="3-third-party-services">3. Third-party services</h2>
+<p>The backend you connect to, the icon URLs returned by the backend,
+and services involved in update checks — GitHub (for the GitHub channel
+build) or Huawei AppGallery (for the AppGallery channel build) — are
+provided by their respective operators and governed by their own terms
+and privacy policies. We give no guarantee as to the content or
+availability of third-party services. Disputes arising from your use of
+a third-party service should be resolved with that third party.</p>
+<h2 id="4-intellectual-property">4. Intellectual property</h2>
 <p>The rights to the App's interface design, icons and code belong to
 the developer. Third-party software names mentioned in the App are used
 only to describe API compatibility and belong to their respective
-owners.</p>
-<h2 id="4-disclaimer">4. Disclaimer</h2>
+owners. You may not reverse-engineer, decompile or tamper with the App,
+except where the law expressly permits it.</p>
+<h2 id="5-disclaimer-and-limitation-of-liability">5. Disclaimer and
+limitation of liability</h2>
 <ul>
 <li>The App is provided "as is". Because backend versions, network
 environments and devices vary, we do not guarantee that the App works in
-every environment.</li>
+every environment, or that it will be uninterrupted or error-free.</li>
 <li>To the extent permitted by law, we are not liable for service
 interruptions, data loss or other losses caused by your backend
 configuration, network conditions, third-party software or force
 majeure.</li>
+<li>You are responsible for the source of the backend and the legality
+of the nodes and subscription content it provides. We give no express or
+implied guarantee regarding a backend or its content, and the
+consequences of using a backend or its content are borne by you.</li>
+<li>The App merely provides viewing and management operations against a
+backend. The consequences of those operations themselves (such as a node
+switch interrupting connections, or a configuration change making the
+backend misbehave) are borne by you as the operator.</li>
+<li>Nothing in this agreement excludes or limits any liability that may
+not lawfully be excluded or limited, and nothing affects the statutory
+rights you enjoy as a consumer.</li>
 </ul>
-<h2 id="5-changes-and-termination">5. Changes and termination</h2>
-<p>We may update this agreement as needed and will publish the updated
-version in the App. If you do not accept the changes, you may stop using
-and uninstall the App.</p>
-<h2 id="6-governing-law">6. Governing law</h2>
+<h2 id="6-minors">6. Minors</h2>
+<p>The App is intended for users who can deploy and manage a proxy core.
+Minors may use the App only with the guidance and consent of a guardian;
+if a guardian does not consent, the minor must stop using the App
+immediately.</p>
+<h2 id="7-changes-and-termination">7. Changes and termination</h2>
+<p>We may update this agreement as needed. The updated version will be
+published in the App and you will be asked for consent again together
+with the privacy consent version. If you do not accept the changes, you
+may stop using and uninstall the App. You may stop using the App at any
+time. The provisions on limitation of liability, intellectual property
+and dispute resolution survive termination.</p>
+<h2 id="8-governing-law-and-dispute-resolution">8. Governing law and
+dispute resolution</h2>
 <p>This agreement is governed by and construed under the laws of the
-People's Republic of China.</p>
-<h2 id="7-contact-us">7. Contact us</h2>
+People's Republic of China. Any dispute arising from this agreement or
+the App shall first be resolved through friendly negotiation; if
+negotiation fails, either party may bring a suit before the people's
+court with jurisdiction at the developer's place of residence.</p>
+<h2 id="9-miscellaneous">9. Miscellaneous</h2>
+<p>This agreement, together with the Mimi Panel Privacy Policy,
+constitutes the entire agreement between you and us regarding your use
+of the App. If any provision of this agreement is held invalid or
+unenforceable, the remaining provisions remain in effect. Section
+headings are for convenience only and do not affect interpretation.</p>
+<h2 id="10-contact-us">10. Contact us</h2>
 <p>If you have any questions about this agreement, contact us by the
-developer's email: <a
-href="mailto:zhisibi@163.com">zhisibi@163.com</a></p>
+developer's email: <a href="mailto:zhisibi@163.com">zhisibi@163.com</a>.
+You can also give feedback in the QQ group: 1127250124.</p>
 </body>
 </html>
