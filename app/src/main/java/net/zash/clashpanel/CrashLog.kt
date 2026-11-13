@@ -53,15 +53,49 @@ object CrashLog {
             appendLine()
             append(sw.toString())
         }
+        // Sanitize before anything hits disk (1.4.21): exception messages in the stack
+        // trace may embed request URLs / backend addresses / credentials. The internal
+        // file and the Download mirror both store this same redacted text, and the
+        // share/copy flows read the stored file, so write-time redaction covers all.
+        val safeText = sanitize(text)
         val f = File(dir(ctx), "crash-" + SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(now) + ".txt")
-        f.writeText(text)
+        f.writeText(safeText)
         // Mirror a copy into the public Download/MimiPanel folder (1.4.15): when the app
         // itself will not open, the user can still grab the log with any file manager.
         // Best effort only — a mirror failure must never disturb the crash flow.
-        runCatching { mirrorToDownloads(ctx, f.name, text) }
+        runCatching { mirrorToDownloads(ctx, f.name, safeText) }
         // keep latest KEEP
         list(ctx).drop(KEEP).forEach { it.delete() }
         ctx.getSharedPreferences("crash", Context.MODE_PRIVATE).edit().putBoolean("unseen", true).commit()
+    }
+
+    /**
+     * Redacts addresses and credentials from crash-log text before it is stored
+     * (same rules as the HarmonyOS build). Stack frames stay readable on purpose:
+     * only full URLs, IP literals and credential values are masked — dotted
+     * identifiers (package/class/method names), three-part version numbers
+     * (e.g. 1.4.21), SDK numbers and timestamps never match the IP rule, which
+     * requires exactly four numeric segments.
+     */
+    fun sanitize(raw: String): String {
+        var s = raw
+        // Full URLs first: one replacement also removes any IP / query secret inside.
+        s = Regex("""https?://[^\s"'\)\]]+""").replace(s, "<url>")
+        // Authorization header value (with optional Bearer scheme) and bare Bearer tokens.
+        s = Regex("""(Authorization\s*[:=]\s*)(?:Bearer\s+)?\S+""", RegexOption.IGNORE_CASE)
+            .replace(s) { it.groupValues[1] + "***" }
+        s = Regex("""Bearer\s+\S+""", RegexOption.IGNORE_CASE).replace(s, "Bearer ***")
+        // Credential query parameters.
+        s = Regex("""([?&](?:secret|token|key|password|auth)=)[^&\s]+""", RegexOption.IGNORE_CASE)
+            .replace(s) { it.groupValues[1] + "***" }
+        // Bracketed IPv6 literals (only when the brackets really hold an address,
+        // i.e. contain a colon — array type markers like [Ljava.lang.String; stay).
+        s = Regex("""\[[^\]]*\](?::\d+)?""").replace(s) { m ->
+            if (m.value.contains(':')) "***" else m.value
+        }
+        // IPv4 literals with optional port.
+        s = Regex("""\b\d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})?\b""").replace(s, "***")
+        return s
     }
 
     /**
