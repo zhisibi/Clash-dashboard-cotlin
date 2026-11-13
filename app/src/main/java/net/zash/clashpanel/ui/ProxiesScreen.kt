@@ -1,5 +1,8 @@
 package net.zash.clashpanel.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
@@ -47,6 +50,42 @@ fun ProxiesHeader(vm: MainViewModel) {
             Spacer(Modifier.width(6.dp))
             if (ui.proxyTab == 0 || vm.providers.isEmpty()) RoundIconButton(Icons.Outlined.Bolt, active = vm.anyGroupTesting, dense = true, busy = vm.anyGroupTesting) { vm.testAllGroups() }
             else RoundIconButton(Icons.Outlined.Sync, dense = true) { vm.updateAllProviders() }
+        }
+        TestProgressBar(vm)
+    }
+}
+
+/**
+ * 1.4.20: slim latency-test progress under the header (HarmonyOS 1.4.18 parity).
+ * Fed by the real aggregate counters in MainViewModel (testTotal/testDone/testCurrent);
+ * shows only while a test session is in flight and disappears when it completes.
+ */
+@Composable
+private fun TestProgressBar(vm: MainViewModel) {
+    val ex = LocalExtra.current
+    val total = vm.testTotal
+    val done = vm.testDone
+    val motionOn = LocalMotion.current
+    AnimatedVisibility(
+        visible = total > 0 && done < total,
+        enter = Motion.revealEnter(motionOn),
+        exit = Motion.fadeExit(motionOn),
+    ) {
+        Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(vm.testCurrent, Modifier.weight(1f), fontSize = 11.sp, color = ex.subtle, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                val pct = if (total > 0) done * 100 / total else 0
+                Text("$done/$total · $pct%", fontSize = 11.sp, color = ex.subtle, maxLines = 1)
+            }
+            Spacer(Modifier.height(4.dp))
+            val frac by animateFloatAsState(
+                targetValue = if (total > 0) (done.toFloat() / total).coerceIn(0f, 1f) else 0f,
+                animationSpec = tween(if (motionOn) 260 else 0),
+                label = "testProgress",
+            )
+            Box(Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(3.dp)).background(ex.chip)) {
+                Box(Modifier.fillMaxWidth(frac).fillMaxHeight().clip(RoundedCornerShape(3.dp)).background(LocalPal.current.accent))
+            }
         }
     }
 }

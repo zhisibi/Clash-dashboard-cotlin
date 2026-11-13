@@ -92,6 +92,43 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val testing = mutableStateMapOf<String, Boolean>()
     val nodeTesting = mutableStateMapOf<String, Boolean>()
     val manualDelay = mutableStateMapOf<String, Int>()
+
+    // ----- latency-test progress (1.4.20, aligned with HarmonyOS 1.4.18) -----
+    // Aggregate over all running latency tests: a group test counts its leaf nodes (the
+    // /group fast path completes them all in one tick, the per-node fallback ticks one by
+    // one), a single-node test counts 1, test-all accumulates across groups. Drives the
+    // slim progress bar under the proxies header; hidden unless a test is in flight.
+    var testTotal by mutableIntStateOf(0); private set
+    var testDone by mutableIntStateOf(0); private set
+    var testCurrent by mutableStateOf(""); private set
+    private var testJobs = 0
+    private val testLock = Any()
+
+    /** Registers [units] new test units; a fresh session (nothing running) resets the counters. */
+    private fun testBegin(units: Int, current: String) {
+        synchronized(testLock) {
+            if (testJobs == 0) { testTotal = 0; testDone = 0 }
+            testJobs++
+            testTotal += units
+            if (current.isNotEmpty()) testCurrent = current
+        }
+    }
+
+    /** Ticks [n] units done; [current] names the item that just finished. */
+    private fun testTick(n: Int = 1, current: String? = null) {
+        synchronized(testLock) {
+            testDone = minOf(testDone + n, testTotal)
+            if (current != null) testCurrent = current
+        }
+    }
+
+    /** Unregisters a test job; the last one out snaps progress to 100% before the bar hides. */
+    private fun testEnd() {
+        synchronized(testLock) {
+            testJobs = maxOf(0, testJobs - 1)
+            if (testJobs == 0) testDone = testTotal
+        }
+    }
     var proxiesLoading by mutableStateOf(false); private set
 
     // ----- rules -----
@@ -583,6 +620,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val a = api ?: return@launchSafe
         if (testing[g.name] == true) return@launchSafe
         testing[g.name] = true
+        val leaves = g.all.filter { proxies[it]?.isGroup != true }
+        val units = maxOf(leaves.size, 1)
+        testBegin(units, g.name)
         try {
             val url = groupTestUrl(g)
             val ok = try {
@@ -593,23 +633,34 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 // 5xx = every node timed out; 404 = core has no /group API -> test one by one
                 if (e.code in 500..599) { g.all.forEach { n -> manualDelay[n] = 0 }; true } else false
             } catch (e: CancellationException) { throw e } catch (e: Throwable) { false }
-            if (!ok) {
+            if (ok) {
+                // fast path (or all-timeout): the whole group completes in one tick
+                testTick(units)
+            } else {
                 val sem = Semaphore(8)
                 coroutineScope {
-                    g.all.filter { proxies[it]?.isGroup != true }.map { n ->
-                        async { sem.withPermit { manualDelay[n] = runCatching { a.proxyDelay(n, url, testTimeout) }.getOrDefault(0) } }
+                    leaves.map { n ->
+                        async {
+                            sem.withPermit {
+                                manualDelay[n] = runCatching { a.proxyDelay(n, url, testTimeout) }.getOrDefault(0)
+                                testTick(1, n)
+                            }
+                        }
                     }.awaitAll()
                 }
             }
             val p = a.proxies(); proxies = p
-        } finally { testing.remove(g.name) }
+        } finally { testing.remove(g.name); testEnd() }
     }
 
     fun testNode(name: String, url: String) = launchSafe {
         val a = api ?: return@launchSafe
         nodeTesting[name] = true
-        try { manualDelay[name] = runCatching { a.proxyDelay(name, url, testTimeout) }.getOrDefault(0) }
-        finally { nodeTesting.remove(name) }
+        testBegin(1, name)
+        try {
+            manualDelay[name] = runCatching { a.proxyDelay(name, url, testTimeout) }.getOrDefault(0)
+            testTick(1, name)
+        } finally { nodeTesting.remove(name); testEnd() }
     }
 
     /** 1.2.6: any proxy-group latency test running (drives the header test-all spinner) */
